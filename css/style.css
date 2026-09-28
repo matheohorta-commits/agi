@@ -391,6 +391,8 @@ input[type=range]:disabled::-webkit-slider-thumb { background: var(--dimmer); }
 .modal .mh h2 { margin: 0; font-family: var(--font-title); font-size: 15px; line-height: 1.4; color: #fff; text-shadow: 2px 2px 0 #06051a; }
 .modal .mh .x { margin-left: auto; }
 .modal .mb { padding: 14px; font-size: 15px; line-height: 1.4; white-space: pre-line; }
+.modal .mb.html { white-space: normal; }
+.modal .mb p { margin: 0 0 9px; }
 .modal .mf { padding: 10px 14px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; border-top: 2px solid var(--line); background: var(--bg2); }
 .choices { display: flex; flex-direction: column; gap: 8px; padding: 0 14px 14px; }
 .choice { text-align: left; background: var(--panel2); border: 2px solid var(--line2); padding: 10px 12px; cursor: pointer; color: #fff; box-shadow: var(--shadow); font-family: var(--font-ui); font-size: 12px; }

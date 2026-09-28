@@ -9,6 +9,16 @@
   let openNow = null;
 
   M.isOpen = () => !!openNow;
+  /** drop pending modals and close the current one (used on prestige / load) */
+  M.reset = () => {
+    queue.length = 0;
+    if (openNow) {
+      openNow = null;
+      const wrap = U.$('#modalWrap');
+      wrap.classList.remove('show');
+      wrap.innerHTML = '';
+    }
+  };
   M.open = (o) => {
     if (openNow) { queue.push(o); return; }
     openNow = o;
@@ -22,8 +32,8 @@
     }
     const body = h('div.mb');
     if (o.kicker) body.appendChild(h('div.ai27tag', o.kicker));
-    if (o.body instanceof Node) body.appendChild(o.body);
-    else if (o.html) body.insertAdjacentHTML('beforeend', o.html);
+    if (o.body instanceof Node) { body.classList.add('html'); body.appendChild(o.body); }
+    else if (o.html) { body.classList.add('html'); body.insertAdjacentHTML('beforeend', o.html); }
     else if (o.body) body.appendChild(document.createTextNode(o.body));
     const modal = h('div.modal' + (o.wide ? '.wide' : ''), head, body);
     if (o.choices) {

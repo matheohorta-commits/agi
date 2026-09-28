@@ -306,9 +306,12 @@
     if (same) m.name += ` (v${same + 1})`;
     S.models.push(m);
     if (S.models.length > 40) {
-      // keep history bounded; preserve deployed index
+      // keep history bounded: drop the oldest models, but never the deployed one
       const dep = S.models[S.deployed];
-      S.models.splice(0, S.models.length - 40);
+      while (S.models.length > 40) {
+        const i = S.models.findIndex((x) => x !== dep);
+        S.models.splice(i, 1);
+      }
       S.models.forEach((x, i) => (x.id = i));
       S.deployed = dep ? S.models.indexOf(dep) : -1;
     }
@@ -559,7 +562,7 @@
   Sim.storyChoices = (ev) => (typeof ev.choices === 'function' ? ev.choices(S, D) : ev.choices);
   Sim.choose = (id, idx) => {
     const ev = Sim.storyDef(id);
-    if (!ev) return;
+    if (!ev || !S.storyQueue.includes(id)) return;
     const ch = Sim.storyChoices(ev)[idx];
     S.storyQueue = S.storyQueue.filter((x) => x !== id);
     const msg = Sim.applyOutcome(ch.o);
@@ -789,6 +792,8 @@
     if (mem > 0) for (const r of G.RESEARCH) if (r.t <= mem && !r.asi) s.research[r.id] = true;
     const hs = G.HEADSTART_CAP[L.headstart || 0] || 0;
     if (hs > 0) {
+      // a head start includes the know-how that model was built with
+      for (const r of G.RESEARCH) if (r.t <= hs - 15 && !r.asi) s.research[r.id] = true;
       const tmpD = C.recalc(s);
       const target = hs - tmpD.M.capFlat;
       const m = modelForCap(target, tmpD.M);

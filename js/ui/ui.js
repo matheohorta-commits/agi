@@ -223,8 +223,8 @@
     bus.on('story', () => G.Modals.checkStory());
     bus.on('rivalRelease', () => {});
     bus.on('dropCaught', () => {});
-    bus.on('prestige', (e) => { G.Hist.data = []; G.Audio.prestige(); G.FX.confetti(200); UI.banner('THE BITTER LESSON', `+${e.gain} BITTER LESSONS`, 'General methods that leverage computation are ultimately the most effective.'); UI.rebuild(); });
-    bus.on('omega', (e) => { G.Hist.data = []; G.Audio.asi(); G.FX.confetti(300); UI.banner('OMEGA POINT', `+${e.gain} Ω`, 'A new universe begins. It remembers you.'); UI.rebuild(); });
+    bus.on('prestige', (e) => { G.Hist.data = []; G.Modals.reset(); G.Audio.prestige(); G.FX.confetti(200); UI.banner('THE BITTER LESSON', `+${e.gain} BITTER LESSONS`, 'General methods that leverage computation are ultimately the most effective.'); UI.rebuild(); });
+    bus.on('omega', (e) => { G.Hist.data = []; G.Modals.reset(); G.Audio.asi(); G.FX.confetti(300); UI.banner('OMEGA POINT', `+${e.gain} Ω`, 'A new universe begins. It remembers you.'); UI.rebuild(); });
     bus.on('asi', () => G.Modals.asi());
     bus.on('era', (e) => { G.Audio.Music.setTheme(G.Scene.themeFor(G.S, G.D)); UI.rebuild(); });
     bus.on('powerUnlocked', () => { UI.markTab('compute'); UI.rebuild(); });

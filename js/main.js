@@ -19,6 +19,7 @@
   }
 
   Main.loadState = (s) => {
+    G.Modals.reset();
     G.Sim.set(s);
     applySettings();
     G.UI.rebuild();
