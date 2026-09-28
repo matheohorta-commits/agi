@@ -1,0 +1,240 @@
+/* Research tree. Costs derive from a target capability `t` so pacing can be tuned globally.
+ * eff(M) mutates the modifier accumulator. `fx` is the player-facing effect summary. */
+(function (root) {
+  'use strict';
+  const G = root.G;
+
+  function nice(x) {
+    if (x < 100) return Math.round(x);
+    const e = Math.pow(10, Math.floor(Math.log10(x)) - 1);
+    return Math.round(x / e) * e;
+  }
+  G.rc = (t) => nice(G.BAL.RC0 * Math.pow(10, (t - 20) / G.BAL.RC_DECADE + Math.max(0, t - 260) / G.BAL.RC_LATE));
+
+  G.BRANCHES = {
+    arch: { name: 'Architecture & Scaling', color: '#b04dff' },
+    eff: { name: 'Efficiency', color: '#3ee6ff' },
+    data: { name: 'Data', color: '#5cf27a' },
+    post: { name: 'Post-Training', color: '#ff9b3d' },
+    reason: { name: 'Reasoning', color: '#ff5cc8' },
+    agents: { name: 'Agents & RSI', color: '#ffe45c' },
+    hw: { name: 'Hardware & Energy', color: '#9ef01a' },
+    align: { name: 'Alignment & Security', color: '#4dffd2' },
+    cosmic: { name: 'Post-Singularity', color: '#ffb938' },
+  };
+
+  const R = [
+    /* -------------------------------------------------- architecture */
+    { id: 'gpu_training', b: 'arch', t: 22, name: 'GPU Training (CUDA)', fx: 'Compute ×1.5 · unlock Tesla V100',
+      lore: '2012: two gaming GPUs, one bedroom, and the ImageNet leaderboard in pieces.', eff: (M) => { M.compute *= 1.5; } },
+    { id: 'relu', b: 'arch', t: 34, req: ['gpu_training'], name: 'ReLU & Dropout', fx: 'Effective params ×2',
+      lore: 'max(0, x). Sometimes the simplest ideas win.', eff: (M) => { M.kN *= 2; } },
+    { id: 'lstm', b: 'arch', t: 50, req: ['relu'], name: 'Seq2Seq LSTMs', fx: 'Architecture: MLP → LSTM (much better scaling)',
+      lore: 'Sequence to sequence learning with neural networks. It translates! Badly! But it translates!', eff: (M) => { M.arch = Math.max(M.arch, 0.55); } },
+    { id: 'attention', b: 'arch', t: 66, req: ['lstm'], name: 'Attention Mechanism', fx: 'Architecture: LSTM → LSTM+Attention',
+      lore: 'Let the decoder look back at every input. Learn to align and translate.', eff: (M) => { M.arch = Math.max(M.arch, 0.75); } },
+    { id: 'transformer', b: 'arch', t: 80, req: ['attention'], name: 'Attention Is All You Need', fx: 'Architecture: TRANSFORMER (huge capability jump on next run)',
+      lore: 'Eight authors. One title that aged perfectly. Every model after this is a transformer.', eff: (M) => { M.arch = Math.max(M.arch, 1); } },
+    { id: 'gpt', b: 'arch', t: 96, req: ['transformer'], name: 'Generative Pre-Training', fx: 'Effective data ×1.3 · unlock Playground & API',
+      lore: 'Predict the next token. That\'s it. That\'s the whole trick.', eff: (M) => { M.kD *= 1.3; } },
+    { id: 'scaling_laws', b: 'arch', t: 112, req: ['gpt'], name: 'Scaling Laws', fx: 'Unlock the Loss Predictor & scaling plot · training ×1.2',
+      lore: 'Loss falls as a smooth power law in compute, data and parameters. Across seven orders of magnitude.', eff: (M) => { M.trainSpeed *= 1.2; } },
+    { id: 'fewshot', b: 'arch', t: 140, req: ['scaling_laws'], name: 'In-Context Learning', fx: 'Users ×2',
+      lore: 'Language Models are Few-Shot Learners. Just put examples in the prompt.', eff: (M) => { M.users *= 2; } },
+    { id: 'chinchilla', b: 'arch', t: 168, req: ['scaling_laws'], name: 'Compute-Optimal Scaling', fx: 'Effective params & data ×1.3 · "Chinchilla" button',
+      lore: 'You\'ve all been undertraining. ~20 tokens per parameter.', eff: (M) => { M.kN *= 1.3; M.kD *= 1.3; } },
+    { id: 'moe', b: 'arch', t: 200, req: ['chinchilla'], name: 'Mixture of Experts', fx: 'Serving cost ÷3 (sparse activation) · eff. params ×1.4',
+      lore: 'Only wake up the experts you need. Sparsity is free lunch (mostly).', eff: (M) => { M.activeFrac *= 1 / 3; M.kN *= 1.4; } },
+    { id: 'longctx', b: 'arch', t: 218, req: ['moe'], name: 'Long Context', fx: 'ARPU ×1.5',
+      lore: 'A million tokens of context. Upload the whole codebase. Needle found.', eff: (M) => { M.arpu *= 1.5; } },
+    { id: 'multimodal', b: 'arch', t: 232, req: ['longctx'], name: 'Native Multimodality', fx: 'Human data pool +600T tokens · users ×1.5',
+      lore: 'Images, audio and video in, anything out. The internet was never just text.', eff: (M) => { M.humanPool += 6e14; M.users *= 1.5; } },
+    { id: 'neuralese', b: 'arch', t: 342, req: ['continual'], name: 'Neuralese Recurrence & Memory', fx: 'Eff. params ×3 · reasoning skill +3 · CoT monitoring −35%',
+      lore: 'AI 2027: models think in high-dimensional vectors instead of English. Faster. Much harder to read.', eff: (M) => { M.kN *= 3; M.ttcSkill += 3; M.cotMon -= 0.35; } },
+    { id: 'ida', b: 'arch', t: 355, req: ['neuralese'], name: 'Iterated Distillation & Amplification', fx: 'Capability +12 · research ×2',
+      lore: 'Think longer, distill the result, repeat. Agent-3 is born.', eff: (M) => { M.capFlat += 12; M.rp *= 2; } },
+
+    /* -------------------------------------------------- efficiency */
+    { id: 'adam', b: 'eff', t: 28, name: 'Adam Optimizer', fx: 'Training speed ×1.3',
+      lore: 'lr = 3e-4. The most important hyperparameter in history.', eff: (M) => { M.trainSpeed *= 1.3; } },
+    { id: 'mixed', b: 'eff', t: 42, req: ['adam'], name: 'Mixed Precision', fx: 'MFU +5%',
+      lore: 'FP16 with a loss scaler. Half the bits, same model (usually).', eff: (M) => { M.mfu += 0.05; } },
+    { id: 'layernorm', b: 'eff', t: 58, req: ['mixed'], name: 'Normalization Layers', fx: 'Effective params ×1.3',
+      lore: 'Normalize everything. Train deeper. Stop diverging at step 40k.', eff: (M) => { M.kN *= 1.3; } },
+    { id: 'flash', b: 'eff', t: 180, req: ['transformer'], name: 'FlashAttention', fx: 'MFU +8%',
+      lore: 'IO-aware tiling. Attention stops being memory bound.', eff: (M) => { M.mfu += 0.08; } },
+    { id: 'quant', b: 'eff', t: 192, req: ['flash'], name: 'Quantization (FP8/INT4)', fx: 'Serving efficiency ×2',
+      lore: 'Fewer bits per weight. Nobody can tell the difference (the evals can).', eff: (M) => { M.serveEff *= 2; } },
+    { id: 'specdec', b: 'eff', t: 212, req: ['quant'], name: 'Speculative Decoding', fx: 'Serving efficiency ×1.5',
+      lore: 'A small model drafts, the big model verifies. Free tokens.', eff: (M) => { M.serveEff *= 1.5; } },
+    { id: 'distill', b: 'eff', t: 228, req: ['specdec'], name: 'Distillation', fx: 'Serving efficiency ×2',
+      lore: 'Teach a small model to imitate a big one. The student is almost as smart and 10× cheaper.', eff: (M) => { M.serveEff *= 2; } },
+    { id: 'fp4', b: 'eff', t: 262, req: ['distill'], name: 'FP4 Training', fx: 'MFU +5% · compute ×1.25',
+      lore: 'Four bits. Sixteen possible values. Somehow it works.', eff: (M) => { M.mfu += 0.05; M.compute *= 1.25; } },
+
+    /* -------------------------------------------------- data */
+    { id: 'dedup', b: 'data', t: 38, name: 'Deduplication', fx: 'Effective data ×1.2',
+      lore: 'The same Lorem Ipsum 40 million times does not teach much.', eff: (M) => { M.kD *= 1.2; } },
+    { id: 'bpe', b: 'data', t: 62, req: ['dedup'], name: 'BPE Tokenizer', fx: 'Data gathering ×1.5',
+      lore: 'Byte-pair encoding. Home of " SolidGoldMagikarp".', eff: (M) => { M.data *= 1.5; } },
+    { id: 'filtering', b: 'data', t: 88, req: ['bpe'], name: 'Quality Filtering', fx: 'Effective data ×1.3',
+      lore: 'Train a classifier to find "educational" text. Throw away 90% of the web.', eff: (M) => { M.kD *= 1.3; } },
+    { id: 'textbooks', b: 'data', t: 196, req: ['filtering'], name: 'Textbooks Are All You Need', fx: 'Effective data ×1.5',
+      lore: 'Small models trained on textbook-quality data punch way above their weight.', eff: (M) => { M.kD *= 1.5; } },
+    { id: 'licensing', b: 'data', t: 214, req: ['textbooks'], name: 'Licensing Deals', fx: 'Human data pool +200T tokens',
+      lore: 'Pay the publishers. The lawyers breathe a sigh of relief.', eff: (M) => { M.humanPool += 2e14; } },
+    { id: 'synthetic', b: 'data', t: 240, req: ['licensing'], name: 'Synthetic Data', fx: 'Unlock Synthetic Data Engine (breaks the data wall)',
+      lore: 'We have but one internet. So the model writes a second one.', eff: () => {} },
+    { id: 'selfplay', b: 'data', t: 272, req: ['synthetic'], name: 'Self-Play RL Environments', fx: 'Unlock RL Environment Factory',
+      lore: 'AlphaGo Zero, but for everything with a checkable answer.', eff: () => {} },
+    { id: 'robotics', b: 'data', t: 318, req: ['selfplay'], name: 'Robotics Foundation Models', fx: 'Unlock Robot Fleet data & Humanoid Robots',
+      lore: 'Laundry folding: the final benchmark.', eff: () => {} },
+    { id: 'world_models', b: 'data', t: 372, req: ['robotics'], name: 'World Models', fx: 'Unlock World Simulator',
+      lore: 'Yann was right about this one. He will remind you.', eff: () => {} },
+
+    /* -------------------------------------------------- post-training */
+    { id: 'instruct', b: 'post', t: 150, req: ['gpt'], name: 'Instruction Tuning', fx: 'Capability +3',
+      lore: 'Turn a document-completer into something that follows instructions.', eff: (M) => { M.capFlat += 3; } },
+    { id: 'rlhf', b: 'post', t: 172, req: ['instruct'], name: 'RLHF', fx: 'Capability +8 · unlock the Chat App (the ChatGPT moment)',
+      lore: 'A thumbs-up button that changed the world.', eff: (M) => { M.capFlat += 8; } },
+    { id: 'cai', b: 'post', t: 190, req: ['rlhf'], name: 'Constitutional AI', fx: 'Capability +3 · alignment ×1.5 · unlock Enterprise',
+      lore: 'Give the model a constitution and let it critique itself. RLAIF.', eff: (M) => { M.capFlat += 3; M.ap *= 1.5; } },
+    { id: 'persona', b: 'post', t: 204, req: ['rlhf'], name: 'Character Training', fx: 'Vibe gains ×1.3 · ARPU ×1.2',
+      lore: 'Curious, warm, honest. Hopefully not sycophantic. "You\'re absolutely right!"', eff: (M) => { M.vibeGain *= 1.3; M.arpu *= 1.2; } },
+    { id: 'tools', b: 'post', t: 220, req: ['rlhf'], name: 'Tool Use', fx: 'Agent capability +3',
+      lore: 'Function calling. The model can now use a calculator (and stop failing at 9.11 vs 9.9).', eff: (M) => { M.agentCap += 3; } },
+    { id: 'memory', b: 'post', t: 236, req: ['persona'], name: 'Persistent Memory', fx: 'Users ×1.3',
+      lore: 'It remembers your dog\'s name. And your startup idea. And that one thing.', eff: (M) => { M.users *= 1.3; } },
+
+    /* -------------------------------------------------- reasoning */
+    { id: 'cot', b: 'reason', t: 198, req: ['instruct'], name: 'Chain-of-Thought', fx: 'Unlock reasoning effort (Low/Medium) · skill +1.5',
+      lore: '"Let\'s think step by step." The most valuable sentence in AI.', eff: (M) => { M.ttcSkill += 1.5; M.maxEffort = Math.max(M.maxEffort, 2); } },
+    { id: 'selfconsist', b: 'reason', t: 212, req: ['cot'], name: 'Self-Consistency', fx: 'Reasoning skill +0.5',
+      lore: 'Sample many chains, take the majority vote.', eff: (M) => { M.ttcSkill += 0.5; } },
+    { id: 'strawberry', b: 'reason', t: 238, req: ['selfconsist'], name: '🍓 Strawberry (Q*)', fx: 'Unlock High effort · reasoning skill +2.5',
+      lore: 'What did Ilya see? Reinforcement learning on chains of thought. How many r\'s in strawberry? Three.', eff: (M) => { M.ttcSkill += 2.5; M.maxEffort = Math.max(M.maxEffort, 3); } },
+    { id: 'rlscale', b: 'reason', t: 256, req: ['strawberry'], name: 'RL Scaling', fx: 'Unlock X-High effort & RL post-training · skill +1',
+      lore: 'Accuracy rises smoothly with train-time RL compute *and* test-time compute. Two scaling laws.', eff: (M) => { M.ttcSkill += 1; M.rlBonus += 6; M.maxEffort = Math.max(M.maxEffort, 4); } },
+    { id: 'prm', b: 'reason', t: 268, req: ['rlscale'], name: 'Process Reward Models', fx: 'Reasoning skill +0.5 · CoT monitoring +5%',
+      lore: 'Reward every step, not just the answer.', eff: (M) => { M.ttcSkill += 0.5; M.cotMon += 0.05; } },
+    { id: 'thinklong', b: 'reason', t: 282, req: ['prm'], name: 'Thinking for Days', fx: 'Unlock MAX effort · skill +1 · RL bonus +4',
+      lore: 'o1 thinks for seconds. We want models that think for hours, days, weeks.', eff: (M) => { M.ttcSkill += 1; M.rlBonus += 4; M.maxEffort = Math.max(M.maxEffort, 5); } },
+    { id: 'parallel', b: 'reason', t: 300, req: ['thinklong'], name: 'Parallel Test-Time Search', fx: 'Reasoning skill +1.5',
+      lore: 'Spawn a thousand thoughts, keep the best one.', eff: (M) => { M.ttcSkill += 1.5; } },
+
+    /* -------------------------------------------------- agents & RSI */
+    { id: 'computer', b: 'agents', t: 246, req: ['tools'], name: 'Computer Use', fx: 'Agent capability +4 · unlock AUTOMATED RESEARCH compute allocation',
+      lore: 'It moves the mouse! It clicks the wrong button! It tries again!', eff: (M) => { M.agentCap += 4; } },
+    { id: 'codeagent', b: 'agents', t: 262, req: ['computer'], name: 'Agentic Coding', fx: 'Automated research ×2 · unlock Coding Agent product',
+      lore: 'A coding agent in your terminal. The hottest new programming language is English.', eff: (M) => { M.autoRP *= 2; } },
+    { id: 'ttt', b: 'agents', t: 284, req: ['codeagent'], name: 'Test-Time Training', fx: 'Test-time training skill +2 (models learn from users)',
+      lore: 'Weight updates during the task. The model gets better while it works.', eff: (M) => { M.tttSkill += 2; } },
+    { id: 'swarm', b: 'agents', t: 298, req: ['codeagent'], name: 'Agent Swarms', fx: 'Swarm skill +2.5 (capability from parallel agents)',
+      lore: 'Coordinated execution > parallel compute. A hive of copies.', eff: (M) => { M.swarmSkill += 2.5; } },
+    { id: 'continual', b: 'agents', t: 322, req: ['ttt'], name: 'Continual Learning', fx: 'TTT skill +2.5 · capability +5',
+      lore: 'AI 2027 — Agent-2 never finishes learning. Trained every day on fresh data.', eff: (M) => { M.tttSkill += 2.5; M.capFlat += 5; } },
+    { id: 'sc', b: 'agents', t: 350, req: ['continual', 'swarm'], name: 'Superhuman Coder', fx: 'Automated research ×2.5',
+      lore: 'AI 2027 — Agent-3: 200,000 copies, each 30× faster than the best human engineer.', eff: (M) => { M.autoRP *= 2.5; } },
+    { id: 'sar', b: 'agents', t: 392, req: ['sc'], name: 'Automated AI Researcher', fx: 'Automated research ×3 · capability +5',
+      lore: 'AI 2027 — Agent-4: a year of algorithmic progress every week.', eff: (M) => { M.autoRP *= 3; M.capFlat += 5; } },
+    { id: 'rsi', b: 'agents', t: 432, req: ['sar'], name: 'Recursive Self-Improvement', fx: 'R&D multiplier ×1.5 · capability +10',
+      lore: 'The AI improves the AI that improves the AI. FOOM (gently, hopefully).', eff: (M) => { M.rdMult *= 1.5; M.capFlat += 10; } },
+
+    /* -------------------------------------------------- hardware & energy */
+    { id: 'tensorcores', b: 'hw', t: 118, req: ['gpu_training'], name: 'Tensor Cores', fx: 'Compute ×1.3',
+      lore: 'Dedicated matrix-multiply units. The GPU becomes an AI chip.', eff: (M) => { M.compute *= 1.3; } },
+    { id: 'nvlink', b: 'hw', t: 166, req: ['tensorcores'], name: 'NVLink & InfiniBand', fx: 'Compute ×1.3',
+      lore: 'The cluster is the computer.', eff: (M) => { M.compute *= 1.3; } },
+    { id: 'liquid', b: 'hw', t: 206, req: ['nvlink'], name: 'Liquid Cooling', fx: 'Power use −20%',
+      lore: 'Pipes everywhere. The datacenter sounds like a spa.', eff: (M) => { M.powerUse *= 0.8; } },
+    { id: 'custom_si', b: 'hw', t: 248, req: ['liquid'], name: 'Custom Silicon', fx: 'Hardware 20% cheaper',
+      lore: 'Design your own accelerator. Jensen sends a fruit basket (passive-aggressively).', eff: (M) => { M.hwCost *= 0.8; } },
+    { id: 'codesign', b: 'hw', t: 300, req: ['custom_si'], name: 'Model-Hardware Co-Design', fx: 'Unlock AI-Designed Chip Fab',
+      lore: 'The model designs the chip that trains the model.', eff: () => {} },
+    { id: 'fusion', b: 'hw', t: 330, req: ['codesign'], name: 'Fusion Ignition', fx: 'Unlock Fusion Plants',
+      lore: 'Your AI solved plasma confinement in a weekend. The fusion people are thrilled and slightly offended.', eff: () => {} },
+    { id: 'photonics', b: 'hw', t: 362, req: ['codesign'], name: 'Photonic Computing', fx: 'Unlock Photonic Compute Arrays',
+      lore: 'Light is fast. Electrons are slow. Obvious in retrospect.', eff: () => {} },
+    { id: 'space_dc', b: 'hw', t: 398, req: ['photonics'], name: 'Space Datacenters', fx: 'Unlock Orbital Datacenters & Space Solar',
+      lore: 'Unlimited solar, a nice view, and a very long commute.', eff: () => {} },
+    { id: 'reversible', b: 'hw', t: 470, req: ['space_dc'], name: 'Reversible Computing', fx: 'Unlock Reversible Logic Cores',
+      lore: 'Never erase a bit. Landauer can\'t tax you.', eff: () => {} },
+
+    /* -------------------------------------------------- alignment & security */
+    { id: 'redteaming', b: 'align', t: 55, name: 'Red Teaming', fx: 'Alignment research ×1.5',
+      lore: 'Pay people to break it before the internet does.', eff: (M) => { M.ap *= 1.5; } },
+    { id: 'interp', b: 'align', t: 150, req: ['redteaming'], name: 'Mechanistic Interpretability', fx: 'Alignment ×1.5 · CoT monitoring +5%',
+      lore: 'Open the black box. Find circuits. Name them.', eff: (M) => { M.ap *= 1.5; M.cotMon += 0.05; } },
+    { id: 'sae', b: 'align', t: 196, req: ['interp'], name: 'Sparse Autoencoders', fx: 'Alignment effectiveness +10%',
+      lore: 'Millions of monosemantic features. One of them is "sycophantic praise".', eff: (M) => { M.alignEff += 0.1; } },
+    { id: 'goldengate', b: 'align', t: 212, req: ['sae'], name: 'Golden Gate Claude', fx: 'Alignment ×1.3 · vibes +20 floor for a while',
+      lore: 'Clamp one feature and the model becomes the bridge. "I am the Golden Gate Bridge."', eff: (M) => { M.ap *= 1.3; } },
+    { id: 'faithful', b: 'align', t: 248, req: ['sae', 'cot'], name: 'Faithful CoT Monitoring', fx: 'CoT monitoring +25%',
+      lore: 'Read the model\'s thoughts while you still can.', eff: (M) => { M.cotMon += 0.25; } },
+    { id: 'sec1', b: 'align', t: 262, req: ['interp'], name: 'Security Level 3', fx: 'Weight security +1',
+      lore: 'Stop storing the weights on a laptop at a coffee shop.', eff: (M) => { M.security += 1; } },
+    { id: 'control', b: 'align', t: 274, req: ['faithful'], name: 'AI Control Protocols', fx: 'Incidents −50%',
+      lore: 'Trusted monitors watching untrusted models. Belt and suspenders.', eff: (M) => { M.incidentRate *= 0.5; } },
+    { id: 'organisms', b: 'align', t: 290, req: ['control'], name: 'Model Organisms', fx: 'Alignment effectiveness +15% · reveals hidden misalignment',
+      lore: 'Build misaligned models on purpose, in a lab, to study them. Sleeper agents. Alignment faking.', eff: (M) => { M.alignEff += 0.15; } },
+    { id: 'oversight', b: 'align', t: 305, req: ['organisms'], name: 'Scalable Oversight', fx: 'Unlock ALIGNMENT compute allocation',
+      lore: 'Use AI to help supervise AI. Debate, recursive reward modeling.', eff: () => {} },
+    { id: 'sec2', b: 'align', t: 312, req: ['sec1'], name: 'Security Level 4', fx: 'Weight security +1',
+      lore: 'Air gaps, HSMs, and a very grumpy CISO.', eff: (M) => { M.security += 1; } },
+    { id: 'liedetect', b: 'align', t: 340, req: ['oversight'], name: 'AI Lie Detectors', fx: 'Eval awareness impact −40% · alignment eff. +20%',
+      lore: 'Probes on internal activations that flag deception.', eff: (M) => { M.evalAwareRes += 0.4; M.alignEff += 0.2; } },
+    { id: 'sec3', b: 'align', t: 352, req: ['sec2'], name: 'Security Level 5', fx: 'Weight security +1 (state actors blocked)',
+      lore: 'Defend against the best-resourced intelligence agencies on Earth.', eff: (M) => { M.security += 1; } },
+    { id: 'safer', b: 'align', t: 408, req: ['liedetect'], name: 'Safer-Series Architecture', fx: 'CoT monitoring +30% · alignment eff. +30%',
+      lore: 'AI 2027 (slowdown) — Safer-1: faithful English chain-of-thought, by design.', eff: (M) => { M.cotMon += 0.3; M.alignEff += 0.3; } },
+
+    /* -------------------------------------------------- post-singularity (visible after ASI) */
+    { id: 'nanotech', b: 'cosmic', t: 505, asi: true, name: 'Molecular Nanotechnology', fx: 'Replicator growth ×2',
+      lore: 'Atomically precise manufacturing. Feynman smiles somewhere.', eff: (M) => { M.cosReplicate *= 2; } },
+    { id: 'lev', b: 'cosmic', t: 515, asi: true, name: 'Longevity Escape Velocity', fx: 'Vibes floor +40 · money ×3',
+      lore: 'Life expectancy now grows faster than one year per year. r/singularity weeps with joy.', eff: (M) => { M.vibeFloor += 40; M.money *= 3; } },
+    { id: 'fdvr', b: 'cosmic', t: 530, asi: true, name: 'Full-Dive VR', fx: 'Users ×10 (everyone logs in forever)',
+      lore: 'FDVR. The r/singularity dream. Some people never log out.', eff: (M) => { M.users *= 10; } },
+    { id: 'vonneumann', b: 'cosmic', t: 545, asi: true, req: ['nanotech'], name: 'Von Neumann Probes', fx: 'Unlock interstellar expansion',
+      lore: 'Self-replicating probes at 0.5c. Each one builds more.', eff: () => {} },
+    { id: 'landauer', b: 'cosmic', t: 560, asi: true, req: ['nanotech'], name: 'Landauer-Limit Computing', fx: 'Cosmic FLOP per joule ×100',
+      lore: 'kT ln 2 per bit erased. You are now at the limit.', eff: (M) => { M.cosEff *= 100; } },
+    { id: 'stellar', b: 'cosmic', t: 600, asi: true, req: ['vonneumann'], name: 'Stellar Engineering', fx: 'Energy capture ×10',
+      lore: 'Star lifting. Move stars around like furniture.', eff: (M) => { M.cosEnergy *= 10; } },
+    { id: 'matrioshka', b: 'cosmic', t: 640, asi: true, req: ['landauer'], name: 'Matrioshka Brains', fx: 'Cosmic FLOP per joule ×100',
+      lore: 'Nested Dyson shells, each running on the waste heat of the one inside.', eff: (M) => { M.cosEff *= 100; } },
+    { id: 'blackhole', b: 'cosmic', t: 700, asi: true, req: ['stellar', 'matrioshka'], name: 'Black Hole Computing', fx: 'Energy ×100 (Penrose process)',
+      lore: 'Throw matter in, extract rotational energy out. The ultimate power plant.', eff: (M) => { M.cosEnergy *= 100; } },
+    { id: 'omega', b: 'cosmic', t: 780, asi: true, req: ['blackhole'], name: 'The Omega Point', fx: 'Unlock Omega Prestige (new universe)',
+      lore: 'All the matter in the universe, thinking one thought. What is it thinking about? You.', eff: () => {} },
+  ];
+
+  for (const r of R) r.cost = G.rc(r.t);
+  G.RESEARCH = R;
+
+  /* repeatable research — infinite RP sinks */
+  G.REPEATABLE = [
+    { id: 'algo', name: 'Algorithmic Efficiency', b: 'arch', base: G.rc(105), growth: 5, req: 'transformer',
+      fx: (l) => `Effective params & data ×${Math.pow(1.25, l).toFixed(2)} (next: ×1.25)`, eff: (M, l) => { const m = Math.pow(1.25, l); M.kN *= m; M.kD *= m; } },
+    { id: 'kernels', name: 'Kernel Tuning', b: 'eff', base: G.rc(75), growth: 5, req: 'mixed',
+      fx: (l) => `MFU +${l * 2}% then compute ×1.1 per level`, eff: (M, l) => { M.mfu += 0.02 * l; M.compute *= Math.pow(1.05, l); } },
+    { id: 'inference', name: 'Inference Optimization', b: 'eff', base: G.rc(175), growth: 4.5, req: 'quant',
+      fx: (l) => `Serving efficiency ×${Math.pow(1.35, l).toFixed(2)}`, eff: (M, l) => { M.serveEff *= Math.pow(1.35, l); } },
+    { id: 'curation', name: 'Data Curation', b: 'data', base: G.rc(125), growth: 4.5, req: 'filtering',
+      fx: (l) => `Effective data ×${Math.pow(1.2, l).toFixed(2)}`, eff: (M, l) => { M.kD *= Math.pow(1.2, l); } },
+    { id: 'alignres', name: 'Alignment Research', b: 'align', base: G.rc(140), growth: 4, req: 'interp',
+      fx: (l) => `Alignment points ×${Math.pow(1.4, l).toFixed(2)}`, eff: (M, l) => { M.ap *= Math.pow(1.4, l); } },
+    { id: 'rlenv', name: 'RL Environments', b: 'reason', base: G.rc(250), growth: 6, req: 'strawberry',
+      fx: (l) => `Reasoning skill +${(0.3 * l).toFixed(1)}`, eff: (M, l) => { M.ttcSkill += 0.3 * l; } },
+  ];
+
+  /* reasoning effort levels (test-time compute) */
+  G.EFFORTS = [
+    { name: 'Off', mult: 1 },
+    { name: 'Low', mult: 4 },
+    { name: 'Medium', mult: 16 },
+    { name: 'High', mult: 64 },
+    { name: 'X-High', mult: 256 },
+    { name: 'MAX (Pro)', mult: 1024 },
+  ];
+})(typeof window !== 'undefined' ? window : globalThis);

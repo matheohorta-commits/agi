@@ -1,0 +1,38 @@
+/* Objectives: a guided path through the game. The first few incomplete ones are shown in the sidebar. */
+(function (root) {
+  'use strict';
+  const G = root.G;
+  G.OBJECTIVES = [
+    { id: 'o_click', text: 'Click your model to earn $10', cond: (s) => s.stats.totalMoney >= 10, reward: { cash: 10 } },
+    { id: 'o_scraper', text: 'Buy a Web Scraper (DATA tab)', cond: (s) => (s.src.scraper || 0) >= 1, reward: { cash: 15 } },
+    { id: 'o_train', text: 'Start a training run (TRAIN tab)', cond: (s) => s.stats.runs >= 1 || !!s.training, reward: { cash: 20 } },
+    { id: 'o_deploy', text: 'Deploy a model and earn revenue', cond: (s) => s.deployed >= 0, reward: { strawberries: 3 } },
+    { id: 'o_gpu', text: 'Own 5 GPUs of any kind (COMPUTE tab)', cond: (s) => Object.values(s.hw).reduce((a, b) => a + b, 0) >= 5, reward: { cash: 100 } },
+    { id: 'o_research', text: 'Hire a researcher, then complete a research project', cond: (s) => Object.keys(s.research).length >= 1, reward: { strawberries: 3 } },
+    { id: 'o_cap45', text: 'Reach capability 45 — the AlexNet moment', cond: (s, D) => D.bestCap >= 45, reward: { packs: { basic: 1 } } },
+    { id: 'o_drop', text: 'Catch a floating drop', cond: (s) => s.stats.drops >= 1, reward: { strawberries: 5 } },
+    { id: 'o_transformer', text: 'Research "Attention Is All You Need"', cond: (s) => s.research.transformer, reward: { packs: { basic: 1 } } },
+    { id: 'o_cap100', text: 'Reach capability 100 — GPT-1', cond: (s, D) => D.bestCap >= 100, reward: { strawberries: 10 } },
+    { id: 'o_api', text: 'Launch the Playground & API (PRODUCTS)', cond: (s) => s.products.api, reward: { cash: 5e4 } },
+    { id: 'o_pack', text: 'Open a Lore Crate (CARDS tab)', cond: (s) => s.stats.packsOpened >= 1, reward: { strawberries: 5 } },
+    { id: 'o_scaling', text: 'Discover the Scaling Laws', cond: (s) => s.research.scaling_laws, reward: { packs: { basic: 1 } } },
+    { id: 'o_rank1', text: 'Reach #1 on the leaderboard (RACE tab)', cond: (s, D) => D.rank === 1, reward: { packs: { premium: 1 } } },
+    { id: 'o_rlhf', text: 'Research RLHF', cond: (s) => s.research.rlhf, reward: { strawberries: 10 } },
+    { id: 'o_chat', text: 'Launch the Chat App — the ChatGPT moment', cond: (s) => s.products.chat, reward: { packs: { premium: 1 } } },
+    { id: 'o_safety', text: 'Keep your safety margin ≥ 100% at capability ≥ 190', cond: (s, D) => D.cap >= 190 && D.safety >= 1, reward: { strawberries: 10 } },
+    { id: 'o_prestige', text: 'Reach capability 200 and learn the Bitter Lesson (LESSONS)', cond: (s) => s.prestige.count >= 1, reward: { packs: { epic: 1 } } },
+    { id: 'o_reason', text: 'Research 🍓 Strawberry and turn up reasoning effort', cond: (s) => s.research.strawberry && s.effort >= 3, reward: { packs: { premium: 1 } } },
+    { id: 'o_power', text: 'Solve the power bottleneck: 100 MW capacity', cond: (s, D) => D.powerCap >= 1e8, reward: { strawberries: 15 } },
+    { id: 'o_agents', text: 'Research Computer Use and allocate compute to AI research', cond: (s, D) => D.researchFlops > 0, reward: { packs: { epic: 1 } } },
+    { id: 'o_datawall', text: 'Break through the data wall with synthetic data', cond: (s) => (s.src.synthetic || 0) >= 1, reward: { strawberries: 20 } },
+    { id: 'o_agent1', text: 'Reach Agent-1 (capability 300)', cond: (s, D) => D.bestCap >= 300, reward: { packs: { epic: 1 } } },
+    { id: 'o_sc', text: 'Build a Superhuman Coder (capability 350)', cond: (s, D) => D.bestCap >= 350, reward: { packs: { legendary: 1 } } },
+    { id: 'o_choice', text: 'Face the October 2027 decision (capability 405)', cond: (s) => s.flags.race || s.flags.slowdown, reward: { strawberries: 40 } },
+    { id: 'o_asi', text: 'Reach SUPERINTELLIGENCE (capability 500)', cond: (s) => s.flags.asi, reward: { packs: { legendary: 2 } } },
+    { id: 'o_robots', text: 'Start the Robot Economy (COSMOS)', cond: (s) => s.cosmos && s.cosmos.projects.robot_economy, reward: { strawberries: 50 } },
+    { id: 'o_mercury', text: 'Disassemble Mercury', cond: (s) => s.cosmos && s.cosmos.projects.mercury, reward: { packs: { legendary: 1 } } },
+    { id: 'o_dyson', text: 'Capture the whole Sun: 10²⁶ W', cond: (s) => s.cosmos && s.cosmos.energy >= 1e26, reward: { packs: { legendary: 1 } } },
+    { id: 'o_galaxy', text: 'Colonize the Milky Way (10¹¹ stars)', cond: (s) => s.cosmos && s.cosmos.stars >= 9.9e10, reward: { packs: { legendary: 2 } } },
+    { id: 'o_omega', text: 'Reach the Omega Point', cond: (s) => s.omega.count >= 1, reward: { packs: { legendary: 3 } } },
+  ];
+})(typeof window !== 'undefined' ? window : globalThis);

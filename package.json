@@ -1,0 +1,36 @@
+{
+  "name": "feel-the-agi",
+  "productName": "FEEL THE AGI",
+  "version": "0.1.0",
+  "description": "An idle game about scaling laws, compute, and the race to superintelligence.",
+  "main": "electron/main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "serve": "npx http-server -c-1 -p 8080 .",
+    "balance": "node tools/balance.js 12 anthropic 2",
+    "dist": "electron-builder --dir",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "dist:linux": "electron-builder --linux"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.feeltheagi.game",
+    "productName": "FEEL THE AGI",
+    "files": [
+      "index.html",
+      "css/**",
+      "js/**",
+      "assets/**",
+      "electron/**"
+    ],
+    "directories": { "output": "dist" },
+    "win": { "target": "dir" },
+    "mac": { "target": "dir", "category": "public.app-category.games" },
+    "linux": { "target": "dir", "category": "Game" }
+  }
+}
