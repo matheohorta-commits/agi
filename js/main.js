@@ -89,6 +89,7 @@
       G.Panels.updateVibes();
       G.Panels.updateFeedTimers();
       G.Panels.updateBuffs();
+      G.Panels.updateAbilities();
       G.UI.refreshTip();
       G.Audio.Music.intensity = U.clamp((S.vibe + 100) / 200, 0, 1);
     }

@@ -61,7 +61,45 @@
     });
     P.rebuild();
   };
+  P.buildAbilities = () => {
+    const box = document.getElementById('abilities');
+    box.innerHTML = '';
+    for (const a of G.ABILITIES) {
+      const cd = h('div.cd');
+      const cdt = h('div.cdt');
+      const b = h('button.abil', h('img', { src: G.UI.icon(a.icon, 2) }), cd, cdt);
+      b._a = a; b._cd = cd; b._cdt = cdt;
+      b.addEventListener('click', () => {
+        if (G.Sim.useAbility(a.id)) {
+          G.Audio.bigBuy();
+          const r = b.getBoundingClientRect();
+          G.FX.burst(r.left + r.width / 2, r.top + r.height / 2, { n: 18, colors: ['#ffe45c', '#ffffff', '#ff5cc8'] });
+          G.FX.float(r.left + r.width / 2, r.top - 4, a.name + '!', 'big');
+        } else G.Audio.error();
+      });
+      G.UI.tip(b, () => {
+        const S = G.S;
+        const un = a.unlock(S, G.D);
+        const left = (S.cds || {})[a.id] || 0;
+        return `<b>${a.name}</b><br>${a.desc}<br><span class="tiny">Cooldown ${U.fmtTime(a.cd)}</span>${un ? (left > 0 ? `<br>Ready in ${U.fmtTime(left)}` : '<br><span style="color:var(--yellow)">READY</span>') : '<br><span style="color:var(--red)">🔒 Locked</span>'}`;
+      });
+      box.appendChild(b);
+    }
+  };
+  P.updateAbilities = () => {
+    const S = G.S, D = G.D;
+    for (const b of document.getElementById('abilities').children) {
+      const a = b._a;
+      const un = a.unlock(S, D);
+      const left = Math.max(0, (S.cds || {})[a.id] || 0);
+      U.toggleClass(b, 'locked', !un);
+      U.toggleClass(b, 'ready', un && left <= 0);
+      b._cd.style.height = un ? (left / a.cd) * 100 + '%' : '0';
+      U.setText(b._cdt, un && left > 0 ? Math.ceil(left) + 's' : '');
+    }
+  };
   P.rebuild = () => {
+    P.buildAbilities();
     P.buildAlloc();
     E.feed.innerHTML = '';
     const S = G.S;

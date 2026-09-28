@@ -45,6 +45,7 @@
       autoAlloc: true,
       effort: 0,
       buffs: [],
+      cds: {},
       drops: [],
       mini: null,
       rivals: {},

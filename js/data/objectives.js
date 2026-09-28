@@ -35,4 +35,26 @@
     { id: 'o_galaxy', text: 'Colonize the Milky Way (10¹¹ stars)', cond: (s) => s.cosmos && s.cosmos.stars >= 9.9e10, reward: { packs: { legendary: 2 } } },
     { id: 'o_omega', text: 'Reach the Omega Point', cond: (s) => s.omega.count >= 1, reward: { packs: { legendary: 3 } } },
   ];
+
+  /* Active abilities (buttons under the lab scene). cd = cooldown seconds. */
+  G.ABILITIES = [
+    { id: 'vaguepost', name: 'VAGUEPOST', icon: 'bird', cd: 45, unlock: () => true,
+      desc: 'Post something cryptic. Vibes +25.', tweet: ['something big is coming 👀', 'feel the agi', 'we\'re cooking', '🍓', 'you are not ready', 'the vibes are shifting'],
+      use: (Sim) => { Sim.addVibe(25); } },
+    { id: 'crunch', name: 'CRUNCH TIME', icon: 'lightning', cd: 180, unlock: (s) => s.stats.runs >= 1,
+      desc: 'Everyone sleeps at the office. Training ×3 for 20s. Vibes −5.',
+      use: (Sim) => { Sim.addBuff({ id: 'crunch', name: 'Crunch Time', dur: 20, trainSpeed: 3 }); Sim.addVibe(-5); } },
+    { id: 'fundraise', name: 'FUNDRAISE', icon: 'coin', cd: 600, unlock: (s, D) => D.bestCap >= 100,
+      desc: 'Pitch the vision to investors. +3 minutes of revenue (more with good vibes).',
+      use: (Sim, S, D) => { const g = D.revenue * 180 * (1 + Math.max(0, S.vibe) / 100); S.money += g; S.stats.totalMoney += g; Sim.toast('💰 Raised ' + G.U.fmtMoney(g), 'money'); } },
+    { id: 'launch', name: 'LAUNCH EVENT', icon: 'rocket', cd: 480, unlock: (s) => !!s.products.chat,
+      desc: 'Livestream a launch. Users ×2 for 60s, vibes +30.',
+      use: (Sim) => { Sim.addBuff({ id: 'launch', name: 'Launch Event', dur: 60, users: 2 }); Sim.addVibe(30); } },
+    { id: 'redteam', name: 'RED-TEAM SPRINT', icon: 'shield', cd: 300, unlock: (s, D) => D.bestCap >= 160,
+      desc: 'Pause features, find the failure modes. Alignment ×4 for 30s.',
+      use: (Sim) => { Sim.addBuff({ id: 'redteam', name: 'Red-Team Sprint', dur: 30, ap: 4 }); } },
+    { id: 'allhands', name: 'FEEL THE AGI', icon: 'orb', cd: 600, unlock: (s, D) => D.bestCap >= 280,
+      desc: 'An all-hands where everyone chants "Feel the AGI". Research ×3 for 30s.',
+      use: (Sim) => { Sim.addBuff({ id: 'allhands', name: 'Feel the AGI (all-hands)', dur: 30, rp: 3 }); Sim.addVibe(10); } },
+  ];
 })(typeof window !== 'undefined' ? window : globalThis);

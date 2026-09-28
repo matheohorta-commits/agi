@@ -135,6 +135,7 @@
       h('p', `Your best researchers are leaving to start something new. They take the lessons with them.`),
       h('p', { style: { color: 'var(--gold)', fontFamily: 'var(--font-ui)' } }, `+${U.fmtInt(gain)} BITTER LESSONS`),
       h('p.small', 'You will lose: money, hardware, power, data, researchers, research, products, models. You keep: Bitter Lessons & lessons, cards, crates, strawberries, achievements, unlocked labs.'),
+      S.flags.asi ? h('p', { style: { color: 'var(--red)' } }, '⚠ You have reached superintelligence. This also resets the COSMOS (energy, stars, megaprojects). The intended post-ASI prestige is the Omega Point.') : null,
       h('div.sub', { style: { fontFamily: 'var(--font-ui)', fontSize: '10px', margin: '10px 0 6px', color: 'var(--dim)' } }, 'CHOOSE YOUR NEXT LAB'),
       labGrid(pick, (id) => (pick = id)));
     M.open({

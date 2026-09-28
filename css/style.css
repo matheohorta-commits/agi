@@ -106,6 +106,16 @@ body.reduce-fx::after { display: none; }
 #sceneCanvas { display: block; width: 100%; aspect-ratio: 4 / 3; cursor: pointer; }
 #clickHint { position: absolute; left: 8px; bottom: 6px; font-family: var(--font-ui); font-size: 9px; color: #fff; text-shadow: 1px 1px 0 #000; pointer-events: none; opacity: 0.85; }
 #eraBadge { position: absolute; right: 6px; top: 6px; font-family: var(--font-ui); font-size: 9px; color: #fff; background: rgba(11,10,26,0.75); border: 1px solid var(--line); padding: 2px 5px; pointer-events: none; }
+#abilityPanel { padding: 5px; }
+#abilities { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+.abil { position: relative; height: 38px; background: var(--panel2); border: 2px solid var(--line); cursor: pointer; display: grid; place-items: center; box-shadow: var(--shadow); overflow: hidden; padding: 0; }
+.abil img { width: 24px; height: 24px; position: relative; z-index: 1; }
+.abil .cd { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(11,10,26,0.78); z-index: 2; }
+.abil .cdt { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--font-ui); font-size: 9px; color: #fff; z-index: 3; text-shadow: 1px 1px 0 #000; }
+.abil.ready { border-color: var(--yellow); animation: glowy 1.6s infinite; }
+@keyframes glowy { 50% { box-shadow: 0 0 8px var(--yellow), var(--shadow); } }
+.abil.locked { opacity: 0.25; cursor: not-allowed; filter: grayscale(1); }
+.abil:active { transform: translateY(2px); box-shadow: none; }
 #modelPanel .body { padding: 8px; display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; }
 #modelName { font-family: var(--font-ui); font-size: 13px; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #modelSub { font-size: 12px; color: var(--dim); grid-column: 1 / 3; }

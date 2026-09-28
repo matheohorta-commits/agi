@@ -299,8 +299,10 @@
       N: tr.N, D: tr.D, R, loss: G.BAL.E + R, capPre, rlBonus: tr.rlBonus, flop: tr.flop, arch: tr.arch,
       date: D.date, t: S.run.time,
     };
-    // disambiguate duplicate names
-    const same = S.models.filter((x) => x.name === m.name || x.name.startsWith(m.name + ' (')).length;
+    // early research models are named by size; later ones by family (+ version on duplicates)
+    if (estCap < 98) m.name = `${m.name}-${U.fmtParams(tr.N)}`;
+    m.base = m.name;
+    const same = S.models.filter((x) => (x.base || x.name) === m.base).length;
     if (same) m.name += ` (v${same + 1})`;
     S.models.push(m);
     if (S.models.length > 40) {
@@ -362,6 +364,21 @@
     S.vibe = Math.min(100, S.vibe + G.BAL.VIBE_CLICK * D.M.vibeGain * (S.vibe < 60 ? 1 : 0.4));
     if (S.training) S.training.done += D.trainRate * 0.01;
     return { v, crit };
+  };
+
+  /* ================================================================== abilities */
+  Sim.abilityReady = (a) => a.unlock(S, D) && !((S.cds || {})[a.id] > 0);
+  Sim.useAbility = (id) => {
+    const a = G.ABILITIES.find((x) => x.id === id);
+    if (!a || !Sim.abilityReady(a)) return false;
+    S.cds = S.cds || {};
+    S.cds[id] = a.cd;
+    a.use(Sim, S, D);
+    if (a.tweet) post('you', U.pick(a.tweet));
+    S.stats.abilities = (S.stats.abilities || 0) + 1;
+    Sim.recalc();
+    bus.emit('ability', a);
+    return true;
   };
 
   /* ================================================================== drops */
@@ -704,9 +721,10 @@
     const p = G.MEGAPROJECTS.find((x) => x.id === id);
     if (!p || !Sim.projectAvailable(p)) return false;
     const cost = Sim.projectCost(p);
-    if ((cost.money || 0) > S.money || (cost.rp || 0) > S.rp) return false;
+    if ((cost.money || 0) > S.money || (cost.rp || 0) > S.rp || (cost.joules || 0) > S.cosmos.joules) return false;
     S.money -= cost.money || 0;
     S.rp -= cost.rp || 0;
+    S.cosmos.joules -= cost.joules || 0;
     S.cosmos.projects[id] = true;
     if (id === 'probes') S.cosmos.stars = Math.max(S.cosmos.stars, 2);
     Sim.recalc();
@@ -720,11 +738,12 @@
     const P = c.projects;
     const K = G.COSMOS;
     c.t += dt;
-    const rep = P.robot_economy ? K.BASE_REP * (0.25 + c.alloc.rep) * M.cosReplicate : 0.0005;
+    const rep = P.robot_economy ? K.BASE_REP * (0.25 + c.alloc.rep) * M.cosReplicate : 0.002 * (0.25 + c.alloc.rep);
     let maxE = (P.mercury ? K.SUN * Math.max(1, c.stars) : K.EARTH_MAX) * M.cosEnergy * (P.blackholes ? 100 : 1);
     c.maxEnergy = maxE;
     c.energy = Math.min(maxE, c.energy + c.energy * rep * Math.max(0, 1 - c.energy / maxE) * dt);
     c.joules += c.energy * dt;
+    c.totalJoules = (c.totalJoules || 0) + c.energy * dt;
     if (P.probes) {
       const cap = P.intergalactic ? K.UNIVERSE_STARS : P.galactic ? K.GALAXY_STARS : 1e6;
       c.starCap = cap;
@@ -812,7 +831,7 @@
 
   Sim.omegaGain = () => {
     if (!S.cosmos || !S.cosmos.projects.omega_project) return 0;
-    return Math.max(1, Math.floor(Math.pow(Math.max(0, Math.log10(S.cosmos.joules + 1) - 50), 1.5)) + 1);
+    return Math.max(1, Math.floor(Math.pow(Math.max(0, Math.log10(S.cosmos.totalJoules || S.cosmos.joules || 1) - 48), 1.5)) + 1);
   };
   Sim.omegaPrestige = () => {
     const gain = Sim.omegaGain();
@@ -974,6 +993,8 @@
     const floor = D.M.vibeFloor;
     s.vibe += (floor - s.vibe) * B.VIBE_DECAY * dt;
 
+    // ability cooldowns
+    if (s.cds) for (const k in s.cds) if (s.cds[k] > 0) s.cds[k] -= dt;
     // buffs
     for (const b of s.buffs) b.left -= dt;
     if (s.buffs.some((b) => b.left <= 0)) {

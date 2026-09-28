@@ -361,6 +361,14 @@
         ss.appendChild(row);
         page.appendChild(ss);
       } else this.sl = null;
+      if (S.research.strawberry) {
+        const sr = section('REASONING SCALING', 'Two scaling laws for reasoning: accuracy rises with train-time RL compute and with test-time compute (the reasoning-effort buttons under COMPUTE ALLOCATION).');
+        const row = h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' } });
+        this.o1 = [h('canvas', { width: 380, height: 220 }), h('canvas', { width: 380, height: 220 })];
+        this.o1.forEach((c) => row.appendChild(h('div.chartbox', c)));
+        sr.appendChild(row);
+        page.appendChild(sr);
+      } else this.o1 = null;
       this.lastModels = -1;
     },
     update(force) {
@@ -423,6 +431,7 @@
         }
       }
       if (this.sl && (force || Math.random() < 0.1)) drawScalingPlots(this.sl);
+      if (this.o1 && (force || Math.random() < 0.1)) drawReasoningPlots(this.o1);
     },
   });
   function P() { return G.Panels; }
@@ -486,6 +495,51 @@
       x.rotate(-Math.PI / 2);
       x.fillText('Test Loss', 0, 0);
       x.restore();
+    });
+  }
+
+  /** o1-style plots: pass@1 vs train-time RL compute, and vs test-time compute */
+  const AIME = { n: 'AIME', c: 250, w: 20, floor: 0 };
+  function drawReasoningPlots(cvs) {
+    const D = G.D;
+    const base = D.cap - D.capTTC - D.capRL;
+    const skill = G.BAL.TTC_K * D.M.ttcSkill;
+    const rl = Math.max(D.M.rlBonus, 1);
+    const sets = [
+      { title: 'AIME accuracy during training', xl: 'train-time compute (log scale)', pts: Array.from({ length: 8 }, (_, i) => G.benchScore(AIME, base + D.capTTC + rl * Math.pow(i / 7, 0.8) + (i ? 0 : -4))) },
+      { title: 'AIME accuracy at test time', xl: 'test-time compute (log scale)', pts: Array.from({ length: 8 }, (_, i) => G.benchScore(AIME, base + D.capRL + skill * Math.log2(Math.pow(1024, i / 7)))) },
+    ];
+    sets.forEach((set, k) => {
+      const c = cvs[k];
+      const x = c.getContext('2d');
+      const w = c.width, hh = c.height;
+      x.fillStyle = '#000000';
+      x.fillRect(0, 0, w, hh);
+      const L = 44, B = hh - 30, T = 34, Rr = w - 16;
+      x.strokeStyle = '#d0d0d0';
+      x.lineWidth = 1;
+      x.beginPath(); x.moveTo(L, T - 6); x.lineTo(L, B); x.lineTo(Rr, B); x.stroke();
+      x.fillStyle = '#d0d0d0';
+      x.font = '9px VT323, monospace';
+      x.textAlign = 'right';
+      for (let v = 0; v <= 100; v += 20) {
+        const y = B - (v / 100) * (B - T);
+        x.fillText(String(v), L - 6, y + 3);
+        x.beginPath(); x.moveTo(L - 3, y); x.lineTo(L, y); x.stroke();
+      }
+      for (let i = 0; i < 16; i++) { const X = L + ((i + 0.5) / 16) * (Rr - L); x.beginPath(); x.moveTo(X, B); x.lineTo(X, B + (i % 4 === 0 ? 4 : 2)); x.stroke(); }
+      x.textAlign = 'center';
+      x.font = '12px VT323, monospace';
+      x.fillText(set.title, (L + Rr) / 2, 16);
+      x.fillText(set.xl, (L + Rr) / 2, hh - 8);
+      x.save(); x.translate(12, (T + B) / 2); x.rotate(-Math.PI / 2); x.fillText('pass@1 accuracy', 0, 0); x.restore();
+      x.fillStyle = '#ffffff';
+      set.pts.forEach((v, i) => {
+        const X = L + 16 + (i / 7) * (Rr - L - 32);
+        const Y = B - (v / 100) * (B - T);
+        x.beginPath(); x.arc(X, Y, 3, 0, Math.PI * 2); x.fill();
+      });
+      x.textAlign = 'left';
     });
   }
 
@@ -1063,6 +1117,7 @@
       U.setText(m.stars, U.fmt(c.stars));
       U.setText(m.cc, U.fmtFlops(D.cosmicCompute));
       U.setText(m.joules, U.fmt(c.joules) + ' J');
+      m.joules.previousSibling.textContent = 'ENERGY BANK (spend on megaprojects)';
       U.setText(m.ending, S.ending === 'aligned' ? 'Machines of Loving Grace' : 'Consensus-1');
       m.ending.style.color = S.ending === 'aligned' ? 'var(--green)' : 'var(--red)';
       for (const k in this.sl) {
@@ -1088,15 +1143,15 @@
             if (p.needEnergy) reqs.push('Energy ≥ ' + U.fmtWatts(p.needEnergy));
             if (p.needStars) reqs.push('Stars ≥ ' + U.fmt(p.needStars));
             if (p.needResearch) reqs.push('Research: ' + G.RESEARCH.find((r) => r.id === p.needResearch).name);
-            return `<b>${p.name}</b><div class="fx">${p.fx}</div><div class="tl2">${S.ending === 'misaligned' ? p.misaligned : p.aligned}</div><hr>Cost: ${U.fmtMoney(p.cost.money)} + ${U.fmt(p.cost.rp)} RP${reqs.length ? '<br>Requires: ' + reqs.join(', ') : ''}`;
+            return `<b>${p.name}</b><div class="fx">${p.fx}</div><div class="tl2">${S.ending === 'misaligned' ? p.misaligned : p.aligned}</div><hr>Cost: ${U.fmt(p.cost.joules)} J of harvested energy${reqs.length ? '<br>Requires: ' + reqs.join(', ') : ''}`;
           });
           this.proj.appendChild(el);
         }
       }
       for (const el of this.proj.children) if (el._p && !c.projects[el._p.id]) {
         const p = el._p;
-        U.setText(el._cost, `${U.fmtMoney(p.cost.money)} + ${U.fmt(p.cost.rp)} RP`);
-        const can = G.Sim.projectAvailable(p) && S.money >= p.cost.money && S.rp >= p.cost.rp;
+        U.setText(el._cost, `${U.fmt(p.cost.joules)} J`);
+        const can = G.Sim.projectAvailable(p) && c.joules >= p.cost.joules;
         U.toggleClass(el, 'can', can);
       }
       const og = G.Sim.omegaGain();

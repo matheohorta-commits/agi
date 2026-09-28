@@ -209,7 +209,8 @@
       lore: 'All the matter in the universe, thinking one thought. What is it thinking about? You.', eff: () => {} },
   ];
 
-  for (const r of R) r.cost = G.rc(r.t);
+  // post-singularity research is priced for the cosmic economy
+  for (const r of R) r.cost = r.asi ? nice(1e14 * Math.pow(10, (r.t - 500) / 40)) : G.rc(r.t);
   G.RESEARCH = R;
 
   /* repeatable research — infinite RP sinks */
