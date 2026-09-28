@@ -206,7 +206,12 @@
       G.Audio.milestone();
       if (!G.S.settings.reduceFx) G.FX.confetti(80);
     });
-    bus.on('achievement', (a) => { UI.toast(`🏆 ACHIEVEMENT: ${a.name} — ${a.desc}`, 'ach'); G.Audio.achievement(); UI.markTab('stats'); });
+    bus.on('achievement', (a) => {
+      UI.toast(`🏆 ACHIEVEMENT: ${a.name} — ${a.desc}`, 'ach');
+      G.Audio.achievement();
+      UI.markTab('stats');
+      if (root.steam) root.steam.activateAchievement('ACH_' + a.id.toUpperCase()).catch(() => {});
+    });
     bus.on('objective', (o) => { UI.toast(`✔ OBJECTIVE: ${o.text}`, 'good'); G.Audio.notify(); });
     bus.on('train:done', (m) => { G.Audio.trainDone(); UI.markTab('train'); });
     bus.on('deploy', (m) => {
@@ -217,7 +222,11 @@
     bus.on('sota', () => { UI.banner('LMARENA', '#1 — STATE OF THE ART', 'Your model tops the leaderboard. The timeline goes wild.'); G.Audio.milestone(); });
     bus.on('buy', () => G.Audio.buy());
     bus.on('upgrade', () => G.Audio.bigBuy());
-    bus.on('research', (r) => { G.Audio.bigBuy(); UI.toast(`🔬 Researched: ${r.name}`, 'good'); });
+    bus.on('research', (r) => {
+      G.Audio.bigBuy();
+      UI.toast(`🔬 Researched: ${r.name}`, 'good');
+      if (['scaling_laws', 'strawberry', 'cot', 'computer', 'oversight', 'rlscale', 'thinklong', 'selfconsist', 'prm'].includes(r.id)) setTimeout(UI.rebuild, 50);
+    });
     bus.on('product', (p) => { G.Audio.milestone(); UI.toast(`📦 Launched: ${G.Sim.productName(p)}`, 'good'); });
     bus.on('incident', () => { G.Audio.alarm(); G.FX.shake(U.$('#app'), 6); });
     bus.on('story', () => G.Modals.checkStory());
@@ -226,7 +235,11 @@
     bus.on('prestige', (e) => { G.Hist.data = []; G.Modals.reset(); G.Audio.prestige(); G.FX.confetti(200); UI.banner('THE BITTER LESSON', `+${e.gain} BITTER LESSONS`, 'General methods that leverage computation are ultimately the most effective.'); UI.rebuild(); });
     bus.on('omega', (e) => { G.Hist.data = []; G.Modals.reset(); G.Audio.asi(); G.FX.confetti(300); UI.banner('OMEGA POINT', `+${e.gain} Ω`, 'A new universe begins. It remembers you.'); UI.rebuild(); });
     bus.on('asi', () => G.Modals.asi());
-    bus.on('era', (e) => { G.Audio.Music.setTheme(G.Scene.themeFor(G.S, G.D)); UI.rebuild(); });
+    bus.on('era', (e) => {
+      G.Audio.Music.setTheme(G.Scene.themeFor(G.S, G.D));
+      UI.rebuild();
+      if (root.steam) root.steam.setRichPresence(`${G.ERAS[e.era].name} · ${G.LABS[G.S.lab].name}`).catch(() => {});
+    });
     bus.on('powerUnlocked', () => { UI.markTab('compute'); UI.rebuild(); });
     bus.on('datawall', () => UI.markTab('data'));
     bus.on('labUnlocked', () => {});

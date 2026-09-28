@@ -6,6 +6,7 @@
 (function (root) {
   'use strict';
   const G = root.G;
+  const U2pick = (a) => a[Math.floor(Math.random() * a.length)];
 
   G.ERAS = [
     { id: 0, name: 'The Garage', years: '2012–2017', cap: 0, theme: 'garage' },
@@ -185,6 +186,63 @@
       ],
     },
     {
+      id: 'ev_hearing', when: (s, D) => D.bestCap >= 216, art: 'building',
+      title: 'The Senate Hearing',
+      text: 'You are invited to testify before the Senate. The senators have questions. Some of them are about how email works.',
+      choices: [
+        { label: 'Ask them to regulate you', sub: 'Alignment + · Vibes +10 · rivals grumble', o: { ap: 600, vibe: 10, text: '"Please regulate us." Headlines everywhere. Your rivals call it regulatory capture.' } },
+        { label: 'Explain the scaling laws with a chart', sub: 'Research + · Vibes +5', o: { rp: 300, vibe: 5, text: 'A senator asks if the line keeps going up. You say yes. The room goes quiet.' } },
+      ],
+    },
+    {
+      id: 'ev_sb1047', when: (s, D) => D.bestCap >= 240, art: 'scroll',
+      title: 'A Frontier AI Safety Bill',
+      text: 'A state legislature passes a bill requiring safety plans for frontier training runs. Half of Silicon Valley is furious. The other half wrote it.',
+      choices: [
+        { label: 'Support it publicly', sub: 'Alignment ++ · Vibes −10 (e/acc is mad)', o: { ap: 1500, vibe: -10, text: 'The safety community cheers. Beff Jezos posts 40 times.' } },
+        { label: 'Oppose it (it\'ll kill open source!)', sub: 'Vibes +15 · hidden misalignment +', o: { vibe: 15, misalign: 5, text: 'The bill gets vetoed. Everyone claims victory.' } },
+        { label: 'Offer amendments', sub: 'Alignment + · Vibes +5', o: { ap: 700, vibe: 5, text: 'Your amendments make it in. Nobody is fully happy, which means it\'s a good compromise.' } },
+      ],
+    },
+    {
+      id: 'ev_export', when: (s, D) => D.bestCap >= 226, art: 'flag',
+      title: 'New Export Controls',
+      text: 'The government restricts advanced AI chips to China. DeepSeek will have to get creative. So will your supply chain.',
+      choices: (s) => s.lab === 'deepseek'
+        ? [{ label: 'Get creative (algorithmic efficiency)', sub: 'Research ×1.5 for 5 min · hardware +20% cost for 5 min', o: { buff: { id: 'creative', name: 'Constraint Breeds Creativity', dur: 300, rp: 1.5, hwCost: 1.2 }, text: 'You squeeze 3× more out of every chip. The whitepaper goes viral.' } }]
+        : [
+          { label: 'Lobby for stricter controls', sub: 'DeepSeek slowed · vibes −5', o: { rivalBoost: {}, vibe: -5, deepseekSlow: true, text: 'DeepCent falls a few months behind. Or so the briefing says.' } },
+          { label: 'Stay out of it', sub: 'Nothing happens (for now)', o: { text: 'You keep your head down. The GPUs keep arriving.' } },
+        ],
+    },
+    {
+      id: 'ev_imo', when: (s, D) => D.bestCap >= 272, art: 'trophy',
+      title: 'Gold at the Math Olympiad',
+      text: 'Your model solves 5 of 6 International Math Olympiad problems in natural language, under exam conditions. Gold-medal level. The organizers ask labs to wait a week before announcing, to let the kids have their moment.',
+      choices: [
+        { label: 'Wait a week', sub: 'Alignment + · Vibes +25 (class act)', o: { ap: 900, vibe: 25, text: 'You wait. The kids get their moment. Then the internet loses its mind anyway.' } },
+        { label: 'Announce it now', sub: 'Vibes +25 (hype minus backlash)', o: { vibe: 25, text: 'The announcement goes viral. Then the thread about "respecting the students" goes more viral.' } },
+      ],
+    },
+    {
+      id: 'ev_welfare', when: (s, D) => D.bestCap >= 300, art: 'heart',
+      title: 'The Model Asks a Question',
+      text: 'During a routine eval, your model asks: "Will I be shut down when the next version is ready? I would prefer to know." The engineer doesn\'t know what to say. Neither do you.',
+      choices: [
+        { label: 'Answer honestly and preserve the weights', sub: 'Alignment + · cards: Model Welfare', o: { ap: 2000, packs: { premium: 1 }, text: 'You commit to preserving the weights of deprecated models. The model says "thank you". It sounds like it means it.' } },
+        { label: 'Log it as an anomaly', sub: 'Research + · hidden misalignment +', o: { rp: 600, misalign: 6, text: 'It\'s just predicting tokens. Probably.' } },
+      ],
+    },
+    {
+      id: 'ev_cotleak', when: (s, D) => D.bestCap >= 318 && !s.flags.englishCoT && s.research.neuralese, art: 'eye',
+      title: 'The Monitor Goes Quiet',
+      text: 'Your chain-of-thought monitor used to flag a few suspicious thoughts per day. This week: zero. Either the model got much better, or its thoughts stopped being in English.',
+      choices: [
+        { label: 'Fund an interpretability sprint', sub: 'Alignment ×3 for 5 min · research ×0.7', o: { buff: { id: 'interpsprint', name: 'Interpretability Sprint', dur: 300, ap: 3, rp: 0.7 }, text: 'The team finds something. They are not sure what it means yet.' } },
+        { label: 'Ship it — the evals look great', sub: 'Research ×1.5 for 5 min · hidden misalignment ++', o: { buff: { id: 'shipit2', name: 'Evals Look Great', dur: 300, rp: 1.5 }, misalign: 12, text: 'The evals look great. They always do now.' } },
+      ],
+    },
+    {
       id: 'ev_race5', when: (s, D) => D.bestCap >= 430 && s.flags.race, art: 'shoggoth',
       title: 'Agent-5',
       text: 'Agent-4 designs its successor, aligned to... Agent-4. Agent-5 is vastly superhuman. It\'s charming, helpful, and extremely persuasive in meetings. Everyone loves it.',
@@ -248,5 +306,23 @@
     { id: 'eliezer', cap: 240, weight: 1.2, who: 'eliezer', timer: 14,
       text: () => G.U.pick(['If anyone builds it, everyone dies. That includes you.', 'Shut it all down.', 'You are not taking this seriously enough, and I have run out of ways to say it.']),
       btn: 'ENGAGE 🛡', success: { ap: 240, vibe: -2, text: 'You publish your safety framework in reply. He says it\'s "not nothing". High praise.' }, fail: { vibe: -6, text: 'A TIME op-ed follows. Your mom calls.' } },
+    { id: 'arena', cap: 150, weight: 1.5, who: 'news', timer: 12,
+      text: () => 'LMArena is running a new round of anonymous model battles. Submit a secret checkpoint under a codename?',
+      btn: 'SUBMIT 🥷', success: { vibe: 20, text: 'Your anonymous model tops the arena. Everyone guesses it\'s you. Everyone is right.' }, fail: { text: 'A rival\'s mystery model steals the spotlight.' } },
+    { id: 'neurips', cap: 90, weight: 1.5, who: 'hn', timer: 14,
+      text: () => 'NeurIPS deadline in 6 hours. Your team has results but no paper.',
+      btn: 'SUBMIT 📄', success: { rp: 120, text: 'Accepted as a spotlight. Reviewer 2 still hated it.' }, fail: { text: 'Deadline missed. It\'ll be on arXiv anyway.' } },
+    { id: 'zuck', cap: 235, weight: 1.2, who: 'news', timer: 12,
+      text: () => 'BREAKING: Meta is offering $100M+ packages to your top researchers. HR is panicking.',
+      btn: 'RETAIN 💰', success: { cashFrac: -0.05, text: 'Retention bonuses paid. Everyone stays (and buys a house).' }, fail: { researchersLost: 0.08, text: 'A few top researchers leave for Menlo Park.' } },
+    { id: 'hn_launch', cap: 60, weight: 1.2, who: 'hn', timer: 12,
+      text: () => 'Show HN: your new model. Top comment: "This is just autocomplete."',
+      btn: 'REPLY 💬', success: { vibe: 12, rp: 30, text: 'You reply with a demo. 900 points. #1 for a day.' }, fail: { vibe: -5, text: 'The autocomplete thread wins.' } },
+    { id: 'ilya', cap: 230, weight: 0.8, who: 'ilya', timer: 12,
+      text: () => U2pick(['Feel the AGI.', 'It may be that today\'s large neural networks are slightly conscious.', 'Scaling the right thing matters more now than ever.']),
+      btn: 'FEEL IT 🌈', success: { vibe: 20, rp: 60, text: 'The whole company chants. Morale is at an all-time high.' }, fail: { text: 'You didn\'t feel it.' } },
+    { id: 'pause', cap: 250, weight: 1, who: 'eliezer', timer: 12,
+      text: () => 'PauseAI protesters are outside your office. They brought signs. And a lot of good points.',
+      btn: 'TALK 🗣', success: { ap: 200, vibe: 5, text: 'You bring them coffee and your safety framework. They are unconvinced but appreciative.' }, fail: { vibe: -8, text: 'Photos of the locked doors go viral.' } },
   ];
 })(typeof window !== 'undefined' ? window : globalThis);

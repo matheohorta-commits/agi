@@ -103,8 +103,10 @@ player, then the cosmic layer and Omega loops.
 ## Shipping on Steam (notes)
 
 - `npm run dist:win` / `dist:mac` / `dist:linux` produce unpacked builds in `dist/` (upload those as Steam depots).
-- Steam achievements: the game already has ~100 achievements in `js/data/achievements.js`; wire them to Steamworks
-  (e.g. `steamworks.js`) by listening to `G.bus.on('achievement', a => ...)`.
+- Steam achievements are already wired: `electron/preload.js` exposes `window.steam`, `electron/main.js` uses the optional
+  `steamworks.js` module (set `STEAM_APP_ID` or ship `steam_appid.txt`), and every in-game achievement calls
+  `activateAchievement('ACH_<ID>')`. Generate the list for the Steamworks site with `node tools/steam-achievements.js > achievements.csv`.
+  Rich presence shows the current era and lab. Without Steam, everything silently no-ops.
 - Saves live in Electron's `localStorage` (userData). For Steam Cloud, mirror `G.Save.exportString(G.S)` to a file in `app.getPath('userData')`.
 - **Legal:** real companies and public figures appear as parody/commentary. Before a commercial release, have this reviewed — you may want
   to switch to parody names. All names live in `js/data/labs.js`, `js/data/cards.js` and `js/data/feed.js`, so this is a data-only change.

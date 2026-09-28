@@ -538,6 +538,7 @@
     if (o.rivalBoost) {
       for (const id in o.rivalBoost) if (S.rivals[id]) S.rivals[id].cap = Math.max(S.rivals[id].cap, D.bestCap - o.rivalBoost[id]);
     }
+    if (o.deepseekSlow && S.rivals.deepseek) S.rivals.deepseek.cap = Math.max(0, S.rivals.deepseek.cap - 15);
     if (o.missionAppeal) {
       const p = 0.6 + 0.3 * U.clamp(D.safety - 1, 0, 1);
       if (Math.random() < p) {

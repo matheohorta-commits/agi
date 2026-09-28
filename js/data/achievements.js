@@ -14,11 +14,11 @@
 
   // money
   [[1e3, 'Ramen Profitable'], [1e6, 'Seed Stage'], [1e9, 'Unicorn'], [1e12, 'Trillion Dollar Club'], [1e15, 'GDP of Earth'], [1e18, 'Post-Scarcity'], [1e24, 'Money Is Meaningless']].forEach(([m, n]) =>
-    add('money' + m, n, `Earn ${G.U.fmtMoney(m)} total (all time)`, (s) => s.stats.totalMoney >= m));
+    add('money' + Math.round(Math.log10(m)), n, `Earn ${G.U.fmtMoney(m)} total (all time)`, (s) => s.stats.totalMoney >= m));
 
   // compute
   [[1e15, 'PetaFLOP'], [1e18, 'ExaFLOP'], [1e21, 'ZettaFLOP'], [1e24, 'YottaFLOP'], [1e27, 'RonnaFLOP'], [1e30, 'QuettaFLOP']].forEach(([f, n]) =>
-    add('flops' + f, n, `Reach ${G.U.fmtFlops(f)}`, (s, D) => D.compute >= f));
+    add('flops' + Math.round(Math.log10(f)), n, `Reach ${G.U.fmtFlops(f)}`, (s, D) => D.compute >= f));
 
   // training
   [[1, 'First Run'], [10, 'Hyperparameter Sweep'], [50, 'Ablation Study'], [200, 'Grad Student Descent'], [1000, 'Training Is All You Need']].forEach(([n, name]) =>

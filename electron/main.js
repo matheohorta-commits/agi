@@ -1,6 +1,24 @@
 /* Electron shell for desktop / Steam builds. Run: npm install && npm start */
-const { app, BrowserWindow, Menu, shell } = require('electron');
+const { app, BrowserWindow, Menu, shell, ipcMain } = require('electron');
 const path = require('path');
+
+/* Optional Steamworks integration (npm i steamworks.js + steam_appid.txt next to the executable). */
+let steam = null;
+try {
+  const appId = parseInt(process.env.STEAM_APP_ID || '480', 10); // 480 = Spacewar test app
+  steam = require('steamworks.js').init(appId);
+} catch (e) {
+  steam = null; // not running under Steam, or steamworks.js not installed
+}
+ipcMain.handle('steam:available', () => !!steam);
+ipcMain.handle('steam:achievement', (e, id) => {
+  if (!steam) return false;
+  try { return steam.achievement.activate(id); } catch (err) { return false; }
+});
+ipcMain.handle('steam:presence', (e, text) => {
+  if (!steam) return false;
+  try { steam.localplayer.setRichPresence('status', text); return true; } catch (err) { return false; }
+});
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -15,6 +33,7 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       backgroundThrottling: false, // keep the idle sim ticking when unfocused
+      preload: path.join(__dirname, 'preload.js'),
     },
   });
   Menu.setApplicationMenu(null);

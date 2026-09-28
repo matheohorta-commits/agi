@@ -125,7 +125,12 @@
     const S = G.S, D = G.D;
     const m = D.model;
     U.setText(E.modelName, m ? m.name : '— no model yet —');
-    U.setHTML(E.capBig, `${D.cap.toFixed(D.cap < 100 ? 1 : 0)}<small>CAPABILITY</small>`);
+    // count-up animation toward the real capability
+    if (P._capShown === undefined || Math.abs(D.cap - P._capShown) > 200) P._capShown = D.cap;
+    const diff = D.cap - P._capShown;
+    P._capShown += Math.abs(diff) < 0.05 ? diff : diff * 0.22;
+    U.toggleClass(E.capBig, 'rising', diff > 0.5);
+    U.setHTML(E.capBig, `${P._capShown.toFixed(P._capShown < 100 ? 1 : 0)}<small>CAPABILITY</small>`);
     U.setText(E.rankBadge, D.bestCap > 0 ? '#' + D.rank : '#?');
     U.toggleClass(E.rankBadge, 'first', D.rank === 1 && D.cap > 0);
     const parts = [[D.capPre, '#b04dff'], [D.capRL, '#ff9b3d'], [D.capTTC, '#ff5cc8'], [D.capTTT, '#3ee6ff'], [D.capAgents, '#ffe45c'], [D.capFlat, '#5cf27a']];
