@@ -232,7 +232,7 @@
     bus.on('story', () => G.Modals.checkStory());
     bus.on('rivalRelease', () => {});
     bus.on('dropCaught', () => {});
-    bus.on('prestige', (e) => { G.Hist.data = []; G.Modals.reset(); G.Audio.prestige(); G.FX.confetti(200); UI.banner('THE BITTER LESSON', `+${e.gain} BITTER LESSONS`, 'General methods that leverage computation are ultimately the most effective.'); UI.rebuild(); });
+    bus.on('prestige', (e) => { G.Hist.data = []; G.Modals.reset(); G.Audio.prestige(); G.FX.confetti(200); if (e.challenge) UI.banner('CHALLENGE', e.challenge.name.toUpperCase(), e.challenge.rules); else UI.banner('THE BITTER LESSON', `+${e.gain} BITTER LESSONS`, 'General methods that leverage computation are ultimately the most effective.'); UI.rebuild(); });
     bus.on('omega', (e) => { G.Hist.data = []; G.Modals.reset(); G.Audio.asi(); G.FX.confetti(300); UI.banner('OMEGA POINT', `+${e.gain} Ω`, 'A new universe begins. It remembers you.'); UI.rebuild(); });
     bus.on('asi', () => G.Modals.asi());
     bus.on('era', (e) => {
@@ -243,6 +243,7 @@
     bus.on('powerUnlocked', () => { UI.markTab('compute'); UI.rebuild(); });
     bus.on('datawall', () => UI.markTab('data'));
     bus.on('labUnlocked', () => {});
+    bus.on('challengeDone', (c) => { UI.banner('CHALLENGE COMPLETE', c.name.toUpperCase(), c.reward); G.FX.confetti(200); G.Audio.milestone(); });
     bus.on('project', (p) => { G.Audio.milestone(); UI.banner('MEGAPROJECT', p.name.toUpperCase(), G.S.ending === 'misaligned' ? p.misaligned : p.aligned); G.FX.confetti(120); });
     bus.on('packOpened', (r) => { if (r.rarity.idx >= 3) UI.markTab('cards'); });
     bus.on('buff', (b) => {});

@@ -63,12 +63,17 @@ LessWrong, r/singularity) across COMMON → RARE → EPIC → LEGENDARY → SING
 auto-hire), head starts and more. Pick a different lab each run — 8 labs with different perks (Anthropic and OpenAI from the start;
 DeepMind, xAI, Meta, DeepSeek, Mistral and SSI unlock later).
 
+**Challenges.** Once you've learned a few lessons, start a run under a handicap — *Gary Was Right* (data scarcity), *GPU Poor*,
+*Open Weights*, *Doomer Run* (ASI must be aligned), *Touch Grass* (no clicking), *Straight Shot* (no products), *Speedrun 2027* —
+and reach ASI to earn a permanent reward. **Abilities** (vaguepost, crunch time, fundraise, launch event, red-team sprint, all-hands)
+give you active cooldown plays on top of the idle loop.
+
 **After ASI.** The game changes: the scene goes from the garage to a datacenter, a gigawatt campus, Earth from orbit, a Dyson swarm, the galaxy.
 Megaprojects (robot economy, disassembling Mercury, von Neumann probes, galactic network, black hole engines, intergalactic seeding) lead to the
 **Omega Point** — a second prestige layer. The aligned and misaligned endings have different flavor, music and palette.
 
 **Everything is procedural**: pixel art (ASCII sprites + portrait generator), chiptune music and SFX (WebAudio), particles.
-Fonts are SIL OFL (Press Start 2P, Silkscreen, Pixelify Sans, VT323).
+Fonts are SIL OFL (Press Start 2P, Silkscreen, Jersey 10, VT323).
 
 ## Controls
 

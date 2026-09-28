@@ -140,7 +140,7 @@
   Main.start = async () => {
     try {
       await Promise.race([
-        Promise.all(['8px Silkscreen', '8px "Press Start 2P"', '12px "Pixelify Sans"', '16px VT323'].map((f) => document.fonts.load(f))),
+        Promise.all(['8px Silkscreen', '8px "Press Start 2P"', '12px "Jersey 10"', '16px VT323'].map((f) => document.fonts.load(f, 'AB8'))),
         new Promise((r) => setTimeout(r, 2500)),
       ]);
     } catch (e) { /* fonts optional */ }

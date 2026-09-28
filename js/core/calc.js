@@ -18,6 +18,7 @@
       maxEffort: 0, autoRP: 1, enterprise: false,
       hw: {}, res: {}, safety: {}, src: {}, pow: {},
       cost_cai: 1, cost_chat: 1, cosReplicate: 1, cosEff: 1, cosEnergy: 1,
+      capPreMult: 1, misalignRate: 1, noClick: false, noProducts: false,
     };
   }
 
@@ -136,6 +137,12 @@
       const lv = s.prestige.lessons[l.id] || 0;
       if (lv) l.eff(M, lv);
     }
+    // challenges: permanent rewards + active challenge rules
+    if (G.CHALLENGES) {
+      for (const c of G.CHALLENGES) if (s.challengesDone && s.challengesDone[c.id]) c.rewardFx(M);
+      const ac = s.challenge && G.CHALLENGES.find((c) => c.id === s.challenge.id);
+      if (ac) ac.mod(M);
+    }
     const blMult = Math.pow(1 + B.BL_BONUS * s.prestige.totalBL, B.BL_EXP);
     M.compute *= blMult;
     M.money *= blMult;
@@ -204,7 +211,7 @@
     D.effortMult = G.EFFORTS[D.effort].mult;
     D.effortServe = Math.pow(D.effortMult, 0.55);
     if (model) {
-      D.capPre = model.capPre + (model.N < 3e10 ? M.smallModelBonus : 0);
+      D.capPre = model.capPre * M.capPreMult + (model.N < 3e10 ? M.smallModelBonus : 0);
       D.capRL = model.rlBonus || 0;
       D.capTTC = B.TTC_K * M.ttcSkill * Math.log2(D.effortMult);
       D.capTTT = M.tttSkill * Math.log10(1 + (s.lastUsers || 0) / 1e8);

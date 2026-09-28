@@ -222,7 +222,7 @@
   /* ================================================================== products */
   Sim.productName = (p) => (typeof p.name === 'function' ? p.name(G.LABS[S.lab]) : p.name);
   Sim.productCost = (p) => p.cost * G.BAL.COST.product * (p.costKey ? D.M[p.costKey] || 1 : 1);
-  Sim.productUnlocked = (p) => Sim.unlocked(p.req);
+  Sim.productUnlocked = (p) => !D.M.noProducts && Sim.unlocked(p.req);
   Sim.buyProduct = (id) => {
     const p = G.PRODUCTS.find((x) => x.id === id);
     if (!p || S.products[id] || !Sim.productUnlocked(p)) return false;
@@ -244,7 +244,7 @@
   /* ================================================================== training */
   Sim.predict = (N, Dt, rl) => {
     const M = D.M;
-    const capPre = C.capPre(N, Dt, M.kN, M.kD, M.arch);
+    const capPre = C.capPre(N, Dt, M.kN, M.kD, M.arch) * M.capPreMult;
     const rlBonus = rl ? M.rlBonus : 0;
     const post = D.capTTC + D.capTTT + D.capAgents + M.capFlat + (N < 3e10 ? M.smallModelBonus : 0);
     const flop = 6 * N * Dt * (rl ? 1 + G.BAL.RL_COMPUTE_FRAC : 1);
@@ -358,6 +358,7 @@
 
   /* ================================================================== click */
   Sim.click = () => {
+    if (D.M.noClick) return { v: 0, crit: false };
     let v = D.clickValue;
     const crit = Math.random() < 0.04;
     if (crit) v *= 10;
@@ -370,7 +371,7 @@
   };
 
   /* ================================================================== abilities */
-  Sim.abilityReady = (a) => a.unlock(S, D) && !((S.cds || {})[a.id] > 0);
+  Sim.abilityReady = (a) => !D.M.noClick && a.unlock(S, D) && !((S.cds || {})[a.id] > 0);
   Sim.useAbility = (id) => {
     const a = G.ABILITIES.find((x) => x.id === id);
     if (!a || !Sim.abilityReady(a)) return false;
@@ -705,10 +706,43 @@
       t: 0,
     };
     for (const [who, t] of G.FEED_REACT.asi) post(who, t);
+    checkChallengeDone();
     Sim.recalc();
     bus.emit('asi', { ending: S.ending });
   }
   Sim.triggerASI = triggerASI;
+
+  /* ================================================================== challenges */
+  function checkChallengeDone() {
+    const ch = S.challenge && G.CHALLENGES.find((c) => c.id === S.challenge.id);
+    if (!ch) return;
+    let ok = true;
+    if (ch.needAligned && S.ending !== 'aligned') ok = false;
+    if (ch.timeLimit && S.stats.playTime - S.challenge.start > ch.timeLimit) ok = false;
+    S.challengesDone = S.challengesDone || {};
+    if (ok) {
+      S.challengesDone[ch.id] = true;
+      toast(`🏅 CHALLENGE COMPLETE: ${ch.name} — ${ch.reward}`, 'ach');
+      bus.emit('challengeDone', ch);
+    } else toast(`Challenge failed: ${ch.name}. Try again from the LESSONS tab.`, 'bad');
+    S.challenge = null;
+  }
+  Sim.challengesUnlocked = () => (S.stats.asiCount || 0) >= 1;
+  /** start a challenge: resets the run (earning Bitter Lessons if any) */
+  Sim.startChallenge = (id) => {
+    const ch = G.CHALLENGES.find((c) => c.id === id);
+    if (!ch || !Sim.challengesUnlocked()) return false;
+    const gain = D.blGain;
+    const old = S;
+    if (gain >= 1) { old.prestige.count++; old.prestige.totalBL += gain; old.prestige.bank += gain; }
+    old.challenge = { id, start: old.stats.playTime };
+    const s = G.newState(old.lab, old);
+    applyStartLessons(s);
+    Sim.set(s);
+    bus.emit('prestige', { gain: Math.max(0, gain), lab: s.lab, challenge: ch });
+    return true;
+  };
+  Sim.abandonChallenge = () => { S.challenge = null; Sim.recalc(); };
 
   Sim.projectCost = (p) => p.cost;
   Sim.projectAvailable = (p) => {
@@ -1010,7 +1044,7 @@
 
     // misalignment dynamics
     if (D.cap >= 160) {
-      if (D.safety < 1) s.misalign += (1 - D.safety) * 0.012 * dt * (s.flags.race ? 3 : 1) * (D.cap >= 300 ? 1 : 0.35);
+      if (D.safety < 1) s.misalign += (1 - D.safety) * 0.012 * dt * (s.flags.race ? 3 : 1) * (D.cap >= 300 ? 1 : 0.35) * D.M.misalignRate;
       else s.misalign -= Math.min(0.03, (D.safety - 1) * 0.01) * dt;
       s.misalign = U.clamp(s.misalign, 0, 100);
     }

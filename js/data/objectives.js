@@ -58,3 +58,33 @@
       use: (Sim) => { Sim.addBuff({ id: 'allhands', name: 'Feel the AGI (all-hands)', dur: 30, rp: 3 }); Sim.addVibe(10); } },
   ];
 })(typeof window !== 'undefined' ? window : globalThis);
+
+/* Challenges: rule-changing modes (unlocked after the first ASI). Reach ASI while active to earn a permanent reward.
+ * A challenge persists across Bitter Lesson resets until completed or abandoned. */
+(function (root) {
+  'use strict';
+  const G = root.G;
+  G.CHALLENGES = [
+    { id: 'wall', name: 'Gary Was Right', icon: 'wall',
+      rules: 'Deep learning really is hitting a wall: pretraining capability ×0.8.',
+      reward: 'Permanent +6 capability', mod: (M) => { M.capPreMult *= 0.8; }, rewardFx: (M) => { M.capFlat += 6; } },
+    { id: 'gpupoor', name: 'GPU Poor', icon: 'gpu',
+      rules: 'Export controls on everyone: hardware costs ×25.',
+      reward: 'Permanent hardware −20% cost', mod: (M) => { M.hwCost *= 25; }, rewardFx: (M) => { M.hwCost *= 0.8; } },
+    { id: 'openweights', name: 'Open Weights', icon: 'globe',
+      rules: 'You release every model for free: revenue ×0.1. The community gives back: data ×5, vibe floor +15.',
+      reward: 'Permanent data ×2 and users ×1.5', mod: (M) => { M.money *= 0.1; M.data *= 5; M.vibeFloor += 15; }, rewardFx: (M) => { M.data *= 2; M.users *= 1.5; } },
+    { id: 'doomer', name: 'Doomer Run', icon: 'skull',
+      rules: 'Incidents ×3 and hidden misalignment grows ×3. You must reach the ALIGNED ending.',
+      reward: 'Permanent alignment ×3', mod: (M) => { M.incidentRate *= 3; M.misalignRate *= 3; }, rewardFx: (M) => { M.ap *= 3; }, needAligned: true },
+    { id: 'idle', name: 'Touch Grass', icon: 'hourglass',
+      rules: 'No clicking and no abilities. Pure idle.',
+      reward: 'Permanent offline: +8h cap, +25% efficiency', mod: (M) => { M.noClick = true; }, rewardFx: (M) => { M.offlineHours += 8; M.offlineEff += 0.25; } },
+    { id: 'noproducts', name: 'Straight Shot', icon: 'eye',
+      rules: 'No products at all (like SSI). Investors fund you on vibes: revenue ×0.5.',
+      reward: 'Permanent research ×2', mod: (M) => { M.noProducts = true; M.money *= 0.5; }, rewardFx: (M) => { M.rp *= 2; } },
+    { id: 'speedrun', name: 'Speedrun 2027', icon: 'ff',
+      rules: 'Reach ASI within 3 hours of starting the challenge (across resets).',
+      reward: 'Permanent ×1.5 compute, revenue and research', mod: () => {}, rewardFx: (M) => { M.compute *= 1.5; M.money *= 1.5; M.rp *= 1.5; }, timeLimit: 3 * 3600 },
+  ];
+})(typeof window !== 'undefined' ? window : globalThis);

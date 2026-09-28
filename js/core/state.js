@@ -68,6 +68,8 @@
       omega: { count: 0, total: 0, bank: 0 },
       labsUnlocked: { anthropic: true, openai: true },
       cosmos: null,
+      challenge: null,
+      challengesDone: {},
       settings: { sfx: 0.7, music: 0.45, notation: 'short', skipPackAnim: false, reduceFx: false, autosave: true, showTips: true },
       nextDrop: 35,
       nextMini: 75,
@@ -98,6 +100,8 @@
     s.prestige = old.prestige;
     s.omega = old.omega;
     s.labsUnlocked = old.labsUnlocked;
+    s.challenge = old.challenge || null;
+    s.challengesDone = old.challengesDone || {};
     s.settings = old.settings;
     s.story = {};
     // keep one-shot lore events seen, so the player isn't re-asked every run? We re-ask: choices matter per run.

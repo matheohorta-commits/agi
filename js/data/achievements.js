@@ -83,6 +83,10 @@
     add('prestige' + n, name, `Prestige ${n} time${n > 1 ? 's' : ''}`, (s) => s.prestige.count >= n));
   add('omega', 'Omega', 'Reach the Omega Point', (s) => s.omega.count >= 1);
 
+  // challenges
+  add('challenge1', 'Challenger', 'Complete a challenge', (s) => Object.keys(s.challengesDone || {}).length >= 1);
+  add('challenge_all', 'Every Timeline', 'Complete every challenge', (s) => G.CHALLENGES && Object.keys(s.challengesDone || {}).length >= G.CHALLENGES.length);
+
   // labs
   add('lab_all', 'Every Lab', 'Unlock every lab', (s) => G.LAB_ORDER.every((id) => s.labsUnlocked[id]));
   add('secret_strawberry', 'Three R\'s', 'Click the strawberry drop 3 times in one session', (s) => s.stats.strawberryDrops >= 3, { hidden: true });

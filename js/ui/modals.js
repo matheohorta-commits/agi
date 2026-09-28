@@ -229,7 +229,7 @@
 <p>Pretraining uses the real Chinchilla loss fit: <b>L = 1.69 + 406.4/N^0.34 + 410.7/D^0.28</b>. Compute-optimal runs, the data wall, test-time compute, test-time training, agents, recursive self-improvement, eval awareness and CoT monitoring all show up as game systems.</p>
 <p>The 2025–2028 storyline follows <a href="https://ai-2027.com" target="_blank" rel="noopener" style="color:var(--cyan)">AI 2027</a> by Daniel Kokotajlo, Scott Alexander, Thomas Larsen, Eli Lifland and Romeo Dean — including Agent-0 → Agent-5, the R&D progress multiplier, the stolen weights, neuralese, and the October 2027 race-or-slowdown decision. Go read it.</p>
 <p><b>Satire disclaimer:</b> real companies and public figures appear as affectionate parody based on their well-known public statements and memes. They are not affiliated with or endorsing this game. Quotes attributed to real people are either widely reported public statements or clearly comedic paraphrases.</p>
-<p>Fonts: Press Start 2P, Silkscreen, Pixelify Sans, VT323 — SIL Open Font License. All pixel art, music and sound effects are generated procedurally in code.</p>
+<p>Fonts: Press Start 2P, Silkscreen, Jersey 10, VT323 — SIL Open Font License. All pixel art, music and sound effects are generated procedurally in code.</p>
 <p>Made with an unreasonable amount of test-time compute.</p>`,
       buttons: [{ label: 'CLOSE' }],
     });

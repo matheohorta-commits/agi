@@ -1,8 +1,8 @@
 /* FEEL THE AGI — pixel UI */
 @font-face { font-family: 'Silkscreen'; src: url('../assets/fonts/silkscreen-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-display: block; }
 @font-face { font-family: 'Silkscreen'; src: url('../assets/fonts/silkscreen-latin-700-normal.woff2') format('woff2'); font-weight: 700; font-display: block; }
-@font-face { font-family: 'Pixelify Sans'; src: url('../assets/fonts/pixelify-sans-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-display: block; }
-@font-face { font-family: 'Pixelify Sans'; src: url('../assets/fonts/pixelify-sans-latin-700-normal.woff2') format('woff2'); font-weight: 700; font-display: block; }
+/* Jersey 10 is drawn on a 10px grid: size-adjust makes the common 15px body text land on its crisp 2x size */
+@font-face { font-family: 'Jersey 10'; src: url('../assets/fonts/jersey-10-latin-400-normal.woff2') format('woff2'); size-adjust: 133.34%; font-display: block; }
 @font-face { font-family: 'Press Start 2P'; src: url('../assets/fonts/press-start-2p-latin-400-normal.woff2') format('woff2'); font-display: block; }
 @font-face { font-family: 'VT323'; src: url('../assets/fonts/vt323-latin-400-normal.woff2') format('woff2'); font-display: block; }
 
@@ -32,7 +32,7 @@
   --ap: #4dffd2;
   --straw: #ff5c8a;
   --font-ui: 'Silkscreen', monospace;
-  --font-body: 'Pixelify Sans', sans-serif;
+  --font-body: 'Jersey 10', sans-serif;
   --font-title: 'Press Start 2P', monospace;
   --font-num: 'VT323', monospace;
   --shadow: 0 3px 0 #06051a;
@@ -47,7 +47,7 @@ body.era-6 { --accent: #ffb938; --accent2: #ffe45c; --bg: #050408; }
 body.era-7 { --accent: #ff5cc8; --accent2: #ffe45c; --bg: #030208; }
 
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 15px; overflow: hidden; user-select: none; -webkit-user-select: none; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 15px; font-synthesis: none; overflow: hidden; user-select: none; -webkit-user-select: none; }
 button { font-family: var(--font-ui); }
 img, canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -118,7 +118,7 @@ body.reduce-fx::after { display: none; }
 .abil:active { transform: translateY(2px); box-shadow: none; }
 #modelPanel .body { padding: 8px; display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; }
 #modelName { font-family: var(--font-ui); font-size: 13px; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-#modelSub { font-size: 12px; color: var(--dim); grid-column: 1 / 3; }
+#modelSub { font-family: var(--font-num); font-size: 15px; color: var(--dim); grid-column: 1 / 3; }
 #capBig { font-family: var(--font-title); font-size: 18px; color: var(--yellow); text-shadow: 2px 2px 0 #06051a; text-align: right; }
 #capBig.rising { color: #fff; text-shadow: 2px 2px 0 #06051a, 0 0 10px var(--yellow); transform: scale(1.08); }
 #capBig { transition: transform 0.2s; }
@@ -142,8 +142,8 @@ body.reduce-fx::after { display: none; }
 .pbar > span { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--font-ui); font-size: 9px; color: #fff; text-shadow: 1px 1px 0 #000; }
 .row { display: flex; align-items: center; gap: 6px; }
 .row.sb { justify-content: space-between; }
-.small { font-size: 12px; color: var(--dim); }
-.tiny { font-size: 11px; color: var(--dimmer); }
+.small { font-family: var(--font-num); font-size: 15px; color: var(--dim); }
+.tiny { font-family: var(--font-num); font-size: 14px; color: var(--dimmer); }
 .num { font-family: var(--font-num); font-size: 17px; }
 #lossMini { width: 100%; height: 54px; display: block; margin-top: 4px; background: #0b0a1a; border: 1px solid var(--line); }
 
@@ -203,7 +203,7 @@ input[type=range]:disabled::-webkit-slider-thumb { background: var(--dimmer); }
 .item.locked .name::after { content: ' 🔒'; }
 .item img.ic { width: 40px; height: 40px; background: #0b0a1a; border: 1px solid var(--line); }
 .item .name { font-family: var(--font-ui); font-size: 11px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.item .desc { font-size: 12px; color: var(--dim); line-height: 1.2; }
+.item .desc { font-family: var(--font-num); font-size: 16px; color: var(--dim); line-height: 1.05; }
 .item .own { font-family: var(--font-title); font-size: 16px; color: var(--dimmer); text-align: right; min-width: 36px; }
 .item .cost { font-family: var(--font-num); font-size: 17px; color: var(--money); white-space: nowrap; }
 .item .cost.no { color: var(--red); }
@@ -228,6 +228,7 @@ input[type=range]:disabled::-webkit-slider-thumb { background: var(--dimmer); }
 .traingrid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 10px; }
 .card { background: var(--panel); border: 2px solid var(--line); padding: 8px; box-shadow: var(--shadow); }
 .kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 13px; }
+.kv .k { font-family: var(--font-body); }
 .kv .k { color: var(--dim); }
 .kv .v { font-family: var(--font-num); font-size: 17px; text-align: right; }
 .bigbtn { font-family: var(--font-ui); font-size: 12px; padding: 9px 14px; background: var(--gold); color: #1a1030; border: 2px solid #0b0a1a; box-shadow: 0 3px 0 #0b0a1a, inset 0 2px 0 #fff0a8; cursor: pointer; letter-spacing: 1px; }
@@ -260,7 +261,7 @@ input[type=range]:disabled::-webkit-slider-thumb { background: var(--dimmer); }
 .lane > h5 { margin: 0; font-family: var(--font-ui); font-size: 10px; padding: 4px 6px; color: #0b0a1a; }
 .rnode { padding: 6px 7px; background: var(--panel); border: 2px solid var(--line); cursor: pointer; box-shadow: var(--shadow); position: relative; }
 .rnode .rn { font-family: var(--font-ui); font-size: 10px; color: #fff; }
-.rnode .rf { font-size: 12px; color: var(--dim); line-height: 1.15; margin-top: 2px; }
+.rnode .rf { font-family: var(--font-num); font-size: 15px; color: var(--dim); line-height: 1.05; margin-top: 2px; }
 .rnode .rc { font-family: var(--font-num); font-size: 16px; color: var(--rp); }
 .rnode.done { border-color: #2f7a4a; background: #142a24; cursor: default; }
 .rnode.done .rn::before { content: '✓ '; color: var(--green); }
@@ -330,8 +331,8 @@ input[type=range]:disabled::-webkit-slider-thumb { background: var(--dimmer); }
 .post { display: grid; grid-template-columns: 32px 1fr; gap: 6px; padding: 6px; background: var(--bg2); border: 1px solid var(--line); animation: postin 0.35s; }
 @keyframes postin { from { transform: translateX(20px); opacity: 0; } to { transform: none; opacity: 1; } }
 .post .av { width: 32px; height: 32px; background: #0b0a1a; border: 1px solid var(--line); }
-.post .who { font-size: 13px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.post .who span { font-weight: 400; color: var(--dimmer); font-size: 12px; }
+.post .who { font-size: 14px; color: var(--yellow); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.post .who span { color: var(--dimmer); font-size: 12px; }
 .post .tx { font-size: 13px; line-height: 1.25; color: var(--text); word-wrap: break-word; }
 .post.mini { border-color: var(--yellow); background: #221f10; }
 .post.mini.win { border-color: var(--green); background: var(--bg2); }
@@ -415,6 +416,7 @@ input[type=range]:disabled::-webkit-slider-thumb { background: var(--dimmer); }
 .settings .srow { display: grid; grid-template-columns: 170px 1fr; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
 textarea.save { width: 100%; height: 80px; background: #0b0a1a; color: var(--green); border: 1px solid var(--line); font-family: var(--font-num); font-size: 14px; }
 
+#tooltip .n, #tooltip { font-variant-numeric: tabular-nums; }
 #tooltip { position: fixed; z-index: 200; pointer-events: none; display: none; max-width: 340px; background: #0e0c28; border: 2px solid var(--line2); box-shadow: 0 4px 0 #06051a; padding: 8px 10px; font-size: 13px; line-height: 1.3; }
 #tooltip b { font-family: var(--font-ui); font-size: 11px; color: #fff; }
 #tooltip .tl2 { color: var(--dim); font-style: italic; margin-top: 4px; }

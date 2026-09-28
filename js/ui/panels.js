@@ -137,8 +137,9 @@
     const tot = Math.max(1, parts.reduce((a, [v]) => a + Math.max(0, v), 0));
     const html = parts.map(([v, c]) => `<div style="width:${(Math.max(0, v) / tot) * 100}%;background:${c}"></div>`).join('');
     U.setHTML(E.capBar, html);
+    const chal = S.challenge ? ' · 🏅 ' + (G.CHALLENGES.find((c) => c.id === S.challenge.id) || {}).name : '';
     if (m) {
-      U.setText(E.modelSub, `${U.fmtParams(m.N)} params · ${U.fmt(m.D)} tokens · loss ${m.loss.toFixed(3)} · ${U.fmt(D.users)} users`);
+      U.setText(E.modelSub, `${U.fmtParams(m.N)} params · ${U.fmt(m.D)} tokens · loss ${m.loss.toFixed(3)} · ${U.fmt(D.users)} users${chal}`);
     } else U.setText(E.modelSub, 'Train your first model in the TRAIN tab.');
     // benches: pick 3 unsaturated + METR
     const cap = D.cap;

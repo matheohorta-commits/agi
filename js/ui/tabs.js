@@ -1041,9 +1041,42 @@
       }
       s.appendChild(this.list);
       page.appendChild(s);
+      // challenges
+      if (G.Sim.challengesUnlocked()) {
+        const sc = section('CHALLENGES', 'Rule-changing runs. Starting one resets your run (you still earn any Bitter Lessons). It lasts across resets until you reach ASI or abandon it.');
+        this.chal = h('div.items');
+        for (const c of G.CHALLENGES) {
+          const st = h('div.cost');
+          const btn = h('button.btn', 'START');
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const S = G.S;
+            if (S.challenge && S.challenge.id === c.id) {
+              if (confirm('Abandon this challenge?')) { G.Sim.abandonChallenge(); this.update(); }
+              return;
+            }
+            if (confirm(`Start "${c.name}"?\n\n${c.rules}\n\nThis resets your current run.`)) { G.Sim.startChallenge(c.id); G.Main.save(); }
+          });
+          const el = h('div.item', h('img.ic', { src: UI.icon(c.icon, 3) }), h('div', h('div.name', c.name), h('div.desc', c.rules), st), btn);
+          el._c = c; el._st = st; el._btn = btn;
+          UI.tip(el, () => `<b>${c.name}</b><br>${c.rules}<div class="fx">Reward: ${c.reward}</div>`);
+          this.chal.appendChild(el);
+        }
+        sc.appendChild(this.chal);
+        page.appendChild(sc);
+      } else this.chal = null;
     },
     update() {
       const S = G.S, D = G.D;
+      if (this.chal) for (const el of this.chal.children) {
+        const c = el._c;
+        const done = S.challengesDone && S.challengesDone[c.id];
+        const active = S.challenge && S.challenge.id === c.id;
+        U.setText(el._st, active ? `ACTIVE${c.timeLimit ? ' · ' + U.fmtTime(Math.max(0, c.timeLimit - (S.stats.playTime - S.challenge.start))) + ' left' : ''}` : done ? 'COMPLETED ✓ · ' + c.reward : 'Reward: ' + c.reward);
+        el._st.style.color = active ? 'var(--yellow)' : done ? 'var(--green)' : 'var(--dim)';
+        el._btn.textContent = active ? 'ABANDON' : 'START';
+        el._btn.disabled = !!(S.challenge && !active);
+      }
       const gain = D.blGain;
       const capForNext = G.BAL.BL_BASE + G.BAL.BL_DIV * Math.pow((gain + 1) / D.M.bl, 1 / G.BAL.BL_POW);
       U.setHTML(document.getElementById('blInfo'), `<div class="row sb"><span class="small">Bitter Lessons (bank / total)</span><span class="num" style="color:var(--gold)">${U.fmtInt(S.prestige.bank)} / ${U.fmtInt(S.prestige.totalBL)}</span></div>
