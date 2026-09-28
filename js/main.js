@@ -57,13 +57,33 @@
     return res;
   }
 
+  /* Errors never stop the game: each part of a frame is isolated, the next frame is always scheduled,
+   * and the first occurrence of each distinct error is shown in-game (and kept for Settings → error log). */
+  const errors = (Main.errors = []);
+  Main.reportError = (where, e) => {
+    const msg = (e && (e.message || e.reason && e.reason.message)) || String(e);
+    const key = where + ': ' + msg;
+    console.error('[FEEL THE AGI]', key, e);
+    if (errors.some((x) => x.key === key)) return;
+    errors.push({ key, where, msg, stack: String((e && e.stack) || ''), at: new Date().toISOString() });
+    if (errors.length > 30) errors.shift();
+    if (errors.length <= 3 && G.UI && G.UI.toast) {
+      try { G.UI.toast(`⚠ Something went wrong (${msg.slice(0, 90)}). The game keeps running — Settings → Copy error log to report it.`, 'bad'); } catch (e2) { /* ignore */ }
+    }
+  };
+  function guard(where, fn) {
+    try { fn(); } catch (e) { Main.reportError(where, e); }
+  }
+
   function frame(now) {
     if (!running) return;
+    requestAnimationFrame(frame);
     let dt = (now - last) / 1000;
     last = now;
+    if (!(dt >= 0)) dt = 0;
     if (dt > 5) {
       // tab was hidden: catch up at full speed
-      G.Sim.fastForward(Math.min(dt, 12 * 3600), 1);
+      guard('fastForward', () => G.Sim.fastForward(Math.min(dt, 12 * 3600), 1));
       dt = 0.05;
     }
     dt = Math.min(dt, 0.25);
@@ -71,43 +91,43 @@
     simAcc += dt;
     let n = 0;
     while (simAcc >= TICK && n < 10) {
-      G.Sim.tick(TICK);
       simAcc -= TICK;
       n++;
+      guard('tick', () => G.Sim.tick(TICK));
     }
+    if (n === 10) simAcc = 0;
     const S = G.S, D = G.D;
-    G.Scene.render(dt, S, D);
-    G.FX.update(dt);
-    G.UI.updateDrops();
-    G.Hist.tick(dt);
+    guard('scene', () => G.Scene.render(dt, S, D));
+    guard('fx', () => G.FX.update(dt));
+    guard('drops', () => G.UI.updateDrops());
+    guard('history', () => G.Hist.tick(dt));
     uiAcc += dt;
     if (uiAcc > 0.1) {
       uiAcc = 0;
-      G.UI.updateTop();
-      G.Panels.updateModel();
-      G.Panels.updateTrain();
-      G.Panels.updateAlloc();
-      G.Panels.updateVibes();
-      G.Panels.updateFeedTimers();
-      G.Panels.updateBuffs();
-      G.Panels.updateAbilities();
-      G.UI.refreshTip();
+      guard('top', () => G.UI.updateTop());
+      guard('model', () => G.Panels.updateModel());
+      guard('train', () => G.Panels.updateTrain());
+      guard('alloc', () => G.Panels.updateAlloc());
+      guard('vibes', () => G.Panels.updateVibes());
+      guard('feed', () => G.Panels.updateFeedTimers());
+      guard('buffs', () => G.Panels.updateBuffs());
+      guard('abilities', () => G.Panels.updateAbilities());
+      guard('tooltip', () => G.UI.refreshTip());
       G.Audio.Music.intensity = U.clamp((S.vibe + 100) / 200, 0, 1);
     }
     tabAcc += dt;
     if (tabAcc > 0.2) {
       tabAcc = 0;
-      G.UI.updateTabs();
-      G.Panels.updateObjectives();
-      G.UI.refreshTabLocks();
-      if (!G.Modals.isOpen() && !G.Pack.active && S.storyQueue.length) G.Modals.checkStory();
+      guard('tabs', () => G.UI.updateTabs());
+      guard('objectives', () => G.Panels.updateObjectives());
+      guard('tabLocks', () => G.UI.refreshTabLocks());
+      guard('story', () => { if (!G.Modals.isOpen() && !G.Pack.active && S.storyQueue.length) G.Modals.checkStory(); });
     }
     saveAcc += dt;
     if (saveAcc > 15) {
       saveAcc = 0;
-      if (S.settings.autosave) Main.save();
+      if (S.settings.autosave) guard('save', () => Main.save());
     }
-    requestAnimationFrame(frame);
   }
 
   function bindKeys() {
@@ -133,6 +153,8 @@
     });
     window.addEventListener('beforeunload', () => { if (G.S) Main.save(); });
     document.addEventListener('visibilitychange', () => { if (document.hidden && G.S) Main.save(); });
+    window.addEventListener('error', (e) => Main.reportError('page', e.error || e.message));
+    window.addEventListener('unhandledrejection', (e) => Main.reportError('async', e.reason));
     document.addEventListener('mousedown', () => G.Audio.unlock(), { once: true });
     document.addEventListener('keydown', () => G.Audio.unlock(), { once: true });
   }

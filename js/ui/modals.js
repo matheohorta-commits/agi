@@ -216,8 +216,16 @@
         G.Main.hardReset();
       }
     });
+    const errs = (G.Main.errors || []);
+    const errBtn = h('button.btn', `COPY ERROR LOG (${errs.length})`);
+    errBtn.disabled = !errs.length;
+    errBtn.addEventListener('click', () => {
+      ta.value = `FEEL THE AGI error log · ${navigator.userAgent}\n\n` + errs.map((e) => `[${e.at}] ${e.key}\n${e.stack}`).join('\n\n');
+      ta.select();
+      try { document.execCommand('copy'); G.UI.toast('Error log copied to clipboard', 'good'); } catch (e) { /* ignore */ }
+    });
     body.appendChild(h('div', { style: { marginTop: '10px' } }, ta));
-    body.appendChild(h('div.row', { style: { gap: '6px', marginTop: '6px', flexWrap: 'wrap' } }, exp, imp, saveNow, wipe));
+    body.appendChild(h('div.row', { style: { gap: '6px', marginTop: '6px', flexWrap: 'wrap' } }, exp, imp, saveNow, errBtn, wipe));
     body.appendChild(h('div.tiny', { style: { marginTop: '10px' } }, 'Keys: SPACE = hold to open crates · ESC = close · 1-9 = switch tabs · C = click the model'));
     M.open({ title: 'SETTINGS', icon: 'gear', body, buttons: [{ label: 'DONE' }] });
   };

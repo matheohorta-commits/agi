@@ -274,6 +274,13 @@
     bus.emit('train:start', S.training);
     return true;
   };
+  /** extra training progress from clicks / drops; finishes the run right away instead of overshooting it */
+  function addTrainProgress(flop) {
+    const tr = S.training;
+    if (!tr || !(flop > 0)) return;
+    tr.done += flop;
+    if (tr.done >= tr.flop) finishTraining();
+  }
   Sim.cancelTraining = () => {
     if (!S.training) return;
     S.training = null;
@@ -366,7 +373,7 @@
     S.stats.totalMoney += v;
     S.stats.clicks++;
     S.vibe = Math.min(100, S.vibe + G.BAL.VIBE_CLICK * D.M.vibeGain * (S.vibe < 60 ? 1 : 0.4));
-    if (S.training) S.training.done += D.trainRate * 0.01;
+    addTrainProgress(D.trainRate * 0.01);
     return { v, crit };
   };
 
@@ -458,7 +465,7 @@
       }
       case 'brain': {
         if (S.training) {
-          S.training.done += S.training.flop * 0.15;
+          addTrainProgress(S.training.flop * 0.15);
           text = 'Eureka! Training +15%';
         } else {
           S.rp += D.rpRate * 60;

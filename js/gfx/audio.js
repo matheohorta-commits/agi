@@ -32,7 +32,7 @@
   }
   A.unlock = () => {
     if (!init()) return;
-    if (ctx.state === 'suspended') ctx.resume();
+    if (ctx.state === 'suspended') { const r = ctx.resume(); if (r && r.catch) r.catch(() => {}); }
     Music.start();
   };
   A.setVolumes = (sfx, music) => {

@@ -478,7 +478,7 @@
     bx.globalAlpha = 1;
     // training progress ring
     if (S.training) {
-      const p = S.training.done / S.training.flop;
+      const p = U.clamp(S.training.done / S.training.flop, 0, 1) || 0;
       const n = 60;
       for (let i = 0; i < n * p; i++) {
         const a = -Math.PI / 2 + (i / n) * Math.PI * 2;

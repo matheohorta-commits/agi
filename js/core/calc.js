@@ -260,7 +260,7 @@
     let as;
     if (!model) as = 0;
     else if (s.autoAlloc) as = Math.min(D.serveNeed * 1.03, rest * 0.8);
-    else as = Math.min(rest, U.clamp(s.alloc.serve, 0, 1));
+    else as = Math.min(s.training ? rest * 0.95 : rest, U.clamp(s.alloc.serve, 0, 1)); // a running job always gets some compute
     const at = Math.max(0, rest - as);
     D.alloc = { train: at, serve: as, research: ar, align: aa };
     D.serveFlops = D.compute * as;
