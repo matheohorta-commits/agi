@@ -128,7 +128,7 @@
     // count-up animation toward the real capability
     if (P._capShown === undefined || Math.abs(D.cap - P._capShown) > 200) P._capShown = D.cap;
     const diff = D.cap - P._capShown;
-    P._capShown += Math.abs(diff) < 0.05 ? diff : diff * 0.22;
+    P._capShown += Math.abs(diff) < 0.05 ? diff : diff * 0.45; // settles in ~0.5s so a deploy registers right away
     U.toggleClass(E.capBig, 'rising', diff > 0.5);
     U.setHTML(E.capBig, `${P._capShown.toFixed(P._capShown < 100 ? 1 : 0)}<small>CAPABILITY</small>`);
     U.setText(E.rankBadge, D.bestCap > 0 ? '#' + D.rank : '#?');

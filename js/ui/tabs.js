@@ -408,10 +408,11 @@
       if (S.training) {
         const tr = S.training;
         const f = tr.done / tr.flop;
-        U.setHTML(this.liveInfo, `Run: ${U.fmtParams(tr.N)} params · ${U.fmt(tr.D)} tokens · ${U.fmtFlop(tr.flop)}<br>Progress ${(f * 100).toFixed(1)}% · ETA ${U.fmtTime((tr.flop - tr.done) / Math.max(1, D.trainRate))} · target capability ≈ ${(tr.capPre + tr.rlBonus + D.capTTC + D.capTTT + D.capAgents + D.M.capFlat).toFixed(1)}`);
+        U.setHTML(this.liveInfo, `Run: ${U.fmtParams(tr.N)} params · ${U.fmt(tr.D)} tokens · ${U.fmtFlop(tr.flop)}<br>Progress ${(f * 100).toFixed(1)}% · ETA ${U.fmtTime((tr.flop - tr.done) / Math.max(1, D.trainRate))} · target capability ≈ ${(tr.capPre + tr.rlBonus + (tr.N < 3e10 ? D.M.smallModelBonus : 0) + D.capTTC + D.capTTT + D.capAgents + D.M.capFlat).toFixed(1)}`);
       } else U.setHTML(this.liveInfo, `Training speed: ${U.fmtFlop(D.trainRate)}/s (${U.fmtPct(D.alloc.train)} of compute × MFU ${U.fmtPct(D.mfu)})`);
       // models
-      const sig = S.models.length + ':' + S.deployed + ':' + S.models.map((m) => m.name).join('|').length;
+      // every name + the live one: old models get dropped past 40, so counts/lengths alone can repeat
+      const sig = S.deployed + ':' + S.models.map((m) => m.name).join('|');
       if (force || sig !== this.lastModels) {
         this.lastModels = sig;
         this.models.innerHTML = '';
@@ -419,12 +420,13 @@
         if (!list.length) this.models.appendChild(h('div.empty', 'No models yet. Configure a run above and press START TRAINING.'));
         for (const m of list) {
           const idx = S.models.indexOf(m);
-          const capNow = m.capPre + (m.rlBonus || 0) + D.capTTC + D.capTTT + D.capAgents + D.M.capFlat;
+          const capNow = G.Sim.modelCap(m) + D.capTTC + D.capTTT + D.capAgents + D.M.capFlat;
           const nameEl = h('span.mn', m.name);
-          nameEl.addEventListener('dblclick', () => { const n = prompt('Rename model:', m.name); if (n) { G.Sim.renameModel(idx, n); this.update(true); } });
+          // look the model up on click: indices shift when old models are dropped
+          nameEl.addEventListener('dblclick', () => { const n = prompt('Rename model:', m.name); const i = S.models.indexOf(m); if (n && i >= 0) { G.Sim.renameModel(i, n); this.update(true); } });
           const btn = h('button.btn', idx === S.deployed ? 'LIVE' : 'DEPLOY');
           btn.disabled = idx === S.deployed;
-          btn.addEventListener('click', () => { G.Sim.deploy(idx); this.update(true); });
+          btn.addEventListener('click', () => { const i = S.models.indexOf(m); if (i >= 0) { G.Sim.deploy(i); G.Audio.buy(); } this.update(true); });
           const row = h('div.mrow' + (idx === S.deployed ? '.dep' : ''), nameEl, h('span.pill', U.fmtParams(m.N)), h('span.pill', (m.D / m.N).toFixed(0) + ' tok/p'), h('span.pill.gold', 'cap ' + capNow.toFixed(0)), btn);
           UI.tip(row, () => `<b>${m.name}</b><br>${U.fmtParams(m.N)} params · ${U.fmt(m.D)} tokens<br>Loss ${m.loss.toFixed(4)} · ${U.fmtFlop(m.flop)}<br>Pretraining capability ${m.capPre.toFixed(1)}${m.rlBonus ? ' + RL ' + m.rlBonus : ''}`);
           this.models.appendChild(row);

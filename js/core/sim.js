@@ -333,11 +333,13 @@
     if (estCap >= 260 && tr.N < 1e11) S.stats.efficientModel = true;
     bus.emit('train:done', m);
     const cur = S.deployed >= 0 ? S.models[S.deployed] : null;
-    const better = !cur || m.capPre + m.rlBonus > cur.capPre + (cur.rlBonus || 0) + 0.01;
+    const better = !cur || Sim.modelCap(m) > Sim.modelCap(cur) + 0.01;
     if (S.trainCfg.autoDeploy && better) Sim.deploy(S.models.length - 1);
-    else toast(`Training complete: ${m.name} (cap ${Math.round(estCap)})${better ? '' : ' — not better than current model'}`, 'good');
+    else toast(`Training complete: ${m.name}${better ? ' — press DEPLOY in the TRAIN tab to ship it' : ' — not better than your live model, so it was not deployed'}`, 'good');
   }
 
+  /** the model-dependent part of capability (pretraining + RL + lab perks), exactly as it counts once deployed */
+  Sim.modelCap = (m) => (m ? m.capPre * D.M.capPreMult + (m.N < 3e10 ? D.M.smallModelBonus : 0) + (m.rlBonus || 0) : -Infinity);
   Sim.deploy = (idx) => {
     const m = S.models[idx];
     if (!m) return;
@@ -998,8 +1000,8 @@
     if (L.autotrain && A.train && !S.training) {
       const nd = Sim.optimalForEta(A.trainEta || 60, D.M.rlBonus > 0);
       const p = Sim.predict(nd.N, nd.D, D.M.rlBonus > 0);
-      const cur = D.model ? D.model.capPre + (D.model.rlBonus || 0) : -Infinity;
-      if (p.capPre + p.rlBonus > cur + 1) Sim.startTraining(nd.N, nd.D, D.M.rlBonus > 0);
+      const next = p.capPre + p.rlBonus + (nd.N < 3e10 ? D.M.smallModelBonus : 0); // predict() already applies capPreMult
+      if (next > Sim.modelCap(D.model) + 1) Sim.startTraining(nd.N, nd.D, D.M.rlBonus > 0);
     }
   }
   Sim.autoBuy = autoBuy;
