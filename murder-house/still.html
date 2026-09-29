@@ -13,6 +13,8 @@ const sc = new BrickScene(document.getElementById('c'));
 sc.setModel(mb);
 const hide = (q.get('hide') || '').split(',').filter(Boolean);
 hide.forEach(h => sc.hiddenLevels.add(h));
+(q.get('mods') || '').split(',').filter(Boolean).forEach(m => sc.hiddenModules.add(m));
+if (q.get('q')) sc.setQuality(q.get('q'));
 if (q.get('step')) { const n = +q.get('step'); const set = new Set(); steps.slice(0, n).forEach(s => s.parts.forEach(i => set.add(i))); sc.setVisibility(i => set.has(i)); }
 sc.explode = +(q.get('explode') || 0);
 sc.update();

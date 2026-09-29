@@ -3,7 +3,8 @@ import * as THREE from 'three';
 import { PARTS } from '../core/parts.js';
 import { COLORS } from '../core/colors.js';
 import { partGeometry, PLATE } from './geometry.js';
-import { buildFigure } from './scene.js';
+import { buildFigure } from './minifig.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { figParts } from '../model/furniture.js';
 
 let R, scene, cam, holder;
@@ -13,10 +14,13 @@ function init() {
   const canvas = document.createElement('canvas');
   R = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
   R.setPixelRatio(1);
-  R.toneMapping = THREE.ACESFilmicToneMapping;
+  R.toneMapping = THREE.NeutralToneMapping;
   scene = new THREE.Scene();
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x556070, 1.7));
-  const d = new THREE.DirectionalLight(0xffffff, 2.2);
+  const pm = new THREE.PMREMGenerator(R);
+  scene.environment = pm.fromScene(new RoomEnvironment(), 0.035).texture;
+  pm.dispose();
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x556070, 0.6));
+  const d = new THREE.DirectionalLight(0xffffff, 1.8);
   d.position.set(-3, 6, 5);
   scene.add(d);
   cam = new THREE.PerspectiveCamera(24, 1, 0.1, 500);
@@ -32,13 +36,13 @@ function objectFor(id, c, fig) {
     const f = { id, c, role };
     if (role === 'torso') { f.arms = p.geo.arms; f.hands = p.geo.hands; }
     const g = buildFigure([f], role === 'head');
-    if (role === 'hair') g.children.forEach((m) => m.position.y -= 3.2);
+    if (role === 'hair') g.children.forEach((m) => m.position.y -= 3.3);
     return g;
   }
   const { geo } = partGeometry(id);
   const col = COLORS[c];
   const mat = new THREE.MeshStandardMaterial({
-    color: col.hex, roughness: col.trans ? 0.1 : 0.35, metalness: col.metal ? 0.7 : 0,
+    color: col.hex, roughness: col.trans ? 0.05 : 0.3, metalness: col.metal ? 0.85 : 0,
     transparent: !!col.trans, opacity: col.trans ? 0.72 : 1, emissive: col.glow ? col.hex : 0x000000, emissiveIntensity: col.glow ? 0.25 : 0,
   });
   return new THREE.Mesh(geo, mat);

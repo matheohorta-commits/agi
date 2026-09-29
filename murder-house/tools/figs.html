@@ -1,0 +1,20 @@
+<!doctype html><html><head><meta charset="utf-8"><title>figs</title>
+<style>html,body{margin:0;height:100%;background:#ddd}canvas{width:100%;height:100%;display:block}</style>
+<script type="importmap">{"imports":{"three":"../vendor/three.module.min.js","three/addons/":"../vendor/addons/"}}</script>
+</head><body><canvas id="c"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { buildFigure } from '../js/gfx/minifig.js';
+import { CHARACTERS, figParts } from '../js/model/furniture.js';
+const R = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true });
+R.setSize(innerWidth, innerHeight, false); R.toneMapping = THREE.NeutralToneMapping;
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xe8ecf0);
+const pm = new THREE.PMREMGenerator(R); scene.environment = pm.fromScene(new RoomEnvironment(), 0.035).texture;
+const sun = new THREE.DirectionalLight(0xffffff, 1.6); sun.position.set(-3, 6, 5); scene.add(sun, new THREE.HemisphereLight(0xffffff, 0x777777, 0.5));
+const keys = Object.keys(CHARACTERS);
+keys.forEach((k, i) => { const g = buildFigure(figParts(k)); g.position.x = (i - (keys.length - 1) / 2) * 2.3; g.rotation.y = new URLSearchParams(location.search).get('back') ? Math.PI : (new URLSearchParams(location.search).get('side') ? Math.PI/2 : 0.35); scene.add(g); });
+const cam = new THREE.PerspectiveCamera(22, innerWidth / innerHeight, 0.1, 200);
+const zq = new URLSearchParams(location.search); if (zq.get('zoom')) { const hy = +(zq.get('hy') || 2.4); cam.position.set(-2.3+ +zq.get('zoom'), hy + 0.8, +(zq.get('dist') || 8)); cam.lookAt(-2.3 + +zq.get('zoom'), hy, 0); } else { cam.position.set(0, 4.2, 30); cam.lookAt(0, 2.4, 0); }
+R.render(scene, cam); window.__ready = true;
+</script></body></html>

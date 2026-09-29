@@ -414,3 +414,76 @@ export function figParts(key) {
 export function minifig(mb, key, x, y, z, r = 0) {
   return mb.add('fig', 'black', x, y, z, r, { fig: key, figParts: figParts(key) });
 }
+
+// ------------------------------------------------------------------ small extra props (v2)
+export function grandfatherClock(mb, x, y, z, col = 'darkBrown') {
+  mb.add('3005', col, x, y, z); mb.add('3005', col, x, y + 3, z);
+  mb.add('3005', 'tan', x, y + 6, z); mb.add('3024', col, x, y + 9, z); mb.add('54200', col, x, y + 10, z, 0);
+}
+export function sideTable(mb, x, y, z, col = 'reddishBrown', top = null) {
+  mb.add('3062b', col, x, y, z); mb.add('6141', col, x, y + 3, z);
+  if (top === 'lamp') { mb.add('3062b', 'tan', x, y + 4, z); mb.add('59900', 'white', x, y + 7, z); }
+  else if (top === 'vase') { mb.add('3062b', 'darkBlue', x, y + 4, z); mb.add('32607', 'green', x, y + 7, z); }
+  else if (top) mb.add(top, 'white', x, y + 4, z);
+}
+export function vase(mb, x, y, z, col = 'darkBlue', flower = 'red') {
+  mb.add('3062b', col, x, y, z);
+  mb.add(avail('24866', flower) ? '24866' : '32607', avail('24866', flower) ? flower : 'green', x, y + 3, z);
+}
+export function chinaCabinet(mb, x, y, z, r, col = 'reddishBrown') {
+  const L = new Local(mb, x, y, z, 3, 2, r);
+  L.add('92410', col, 0, 0, 0); L.add('4533', avail('4533', col) ? col : col === 'white' ? 'white' : 'black', 0, 0, 1);
+  P(L, 3, 2, col, 0, 6, 0);
+  L.add('3899', 'white', 0, 7, 0); L.add('2343', 'transClear', 1, 7, 0); L.add('3899', 'white', 2, 7, 0);
+  T(L, 3, 1, col, 0, 7, 1);
+}
+export function coatRack(mb, x, y, z) {
+  mb.add('3062b', 'black', x, y, z); mb.add('3062b', 'black', x, y + 3, z); mb.add('3062b', 'black', x, y + 6, z); mb.add('6141', 'black', x, y + 9, z);
+}
+export function kitchenIsland(mb, x, y, z, r) {
+  const L = new Local(mb, x, y, z, 3, 3, r);
+  L.add('3002', 'white', 0, 0, 0);
+  T(L, 3, 2, 'black', 0, 3, 0);
+  for (const a of [0, 2]) { L.add('3062b', 'dbg', a, 0, 2); L.add('98138', 'black', a, 3, 2); }
+}
+export function filingCabinet(mb, x, y, z, r) {
+  const L = new Local(mb, x, y, z, 2, 1, r);
+  L.add('3004', 'lbg', 0, 0, 0); L.add('3004', 'lbg', 0, 3, 0); T(L, 2, 1, 'dbg', 0, 6, 0);
+}
+export function globe(mb, x, y, z) { mb.add('3062b', 'darkBrown', x, y, z); mb.add('6141', 'pearlGold', x, y + 3, z); mb.add('3062b', 'blue', x, y + 4, z); }
+export function vanity(mb, x, y, z, r, col = 'white') {
+  const L = new Local(mb, x, y, z, 2, 1, r);
+  L.add('3062b', col, 0, 0, 0); L.add('3062b', col, 1, 0, 0);
+  P(L, 2, 1, col, 0, 3, 0);
+  L.add('3899', 'transClear', 0, 4, 0); L.add('3070b', 'medNougat', 1, 4, 0);
+}
+// a 2x2 crate: closed (tile lid), open (studs to put things on) or with a cobweb on one corner
+export function crate(mb, x, y, z, col = 'reddishBrown', top = 'lid') {
+  mb.add('3003', col, x, y, z);
+  if (top === 'lid') mb.add('3068b', col, x, y + 3, z);
+  else if (top === 'web') { mb.add('90981', 'white', x, y + 3, z); mb.add('3070b', col, x + 1, y + 3, z); mb.add('3069b', col, x, y + 3, z + 1); }
+}
+export function birdBath(mb, x, y, z) {
+  mb.add('3941', 'lbg', x, y, z); mb.add('3941', 'lbg', x, y + 3, z); mb.add('14769', 'transClear', x, y + 6, z);
+}
+// a bed of flowers on studs: round 1x1 plates in bright colours with a few leaves
+export function flowerBed(mb, cells, y, seed = 5) {
+  let s = seed;
+  const R = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+  const cols = ['red', 'yellow', 'white', 'orange', 'red', 'white'];
+  for (const [x, z] of cells) {
+    const v = R();
+    if (v < 0.28) mb.tryAdd('32607', 'green', x, y, z);
+    else if (v < 0.4) mb.tryAdd('2423', 'green', x, y, z);
+    else { const c = cols[Math.floor(R() * cols.length)]; mb.tryAdd(avail('24866', c) ? '24866' : '6141', c, x, y, z); }
+  }
+}
+// low hedge: 1x2 dark green bricks topped with leaves
+export function hedge(mb, x0, z0, len, axis, y) {
+  for (let i = 0; i + 1 < len; i += 2) {
+    const [x, z, r] = axis === 'x' ? [x0 + i, z0, 0] : [x0, z0 + i, 1];
+    if (mb.tryAdd('3004', 'darkGreen', x, y, z, r) < 0) continue;
+    mb.tryAdd('2423', 'green', x, y + 3, z);
+    mb.tryAdd('2423', 'darkGreen', axis === 'x' ? x + 1 : x, y + 3, axis === 'x' ? z : z + 1);
+  }
+}

@@ -7,103 +7,123 @@
 <title>The Murder House Brick Set</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&family=Archivo:wght@700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&family=Archivo:wght@600;800;900&display=swap">
 <!-- APP:HEAD:END -->
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
 <!-- APP:BODY:BEGIN -->
 <div id="app" class="app" data-mode="explore">
-  <header class="bar">
-    <div class="brand">
-      <svg class="mark" viewBox="0 0 40 40" aria-hidden="true"><path d="M4 36V18L13 8l9 10v18M22 36V14l7-8 7 8v22M4 36h32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><rect x="10" y="22" width="5" height="7" fill="currentColor"/><rect x="26" y="18" width="5" height="6" fill="var(--amber)"/></svg>
-      <div class="brand-text">
-        <h1>The Murder House</h1>
-        <p id="brand-sub">1120 Westchester Pl. · Los Angeles</p>
-      </div>
-    </div>
-    <nav class="tabs" role="tablist" aria-label="Mode">
-      <button role="tab" id="tab-explore" data-mode="explore" aria-selected="true">3D house</button>
-      <button role="tab" id="tab-booklet" data-mode="booklet" aria-selected="false">Instructions</button>
-      <button role="tab" id="tab-build" data-mode="build" aria-selected="false">Build it yourself</button>
-      <button role="tab" id="tab-parts" data-mode="parts" aria-selected="false">Parts &amp; buying</button>
-    </nav>
-    <div class="radio" id="radio">
-      <button class="radio-play" id="radio-play" aria-label="Play music" title="Play music">
-        <svg viewBox="0 0 24 24" class="i-play"><path d="M7 4l13 8-13 8z"/></svg>
-        <svg viewBox="0 0 24 24" class="i-pause"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>
-      </button>
-      <button class="radio-station" id="radio-station" aria-haspopup="true" aria-expanded="false">
-        <span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-        <span class="radio-text"><b id="radio-name">Murder House Lofi</b><small id="radio-track">tap play · built-in radio</small></span>
-      </button>
-      <input type="range" id="radio-vol" min="0" max="100" value="60" aria-label="Volume">
-      <div class="radio-menu" id="radio-menu" hidden></div>
-    </div>
-  </header>
-
   <main class="stage">
     <canvas id="view" aria-label="3D model of the Murder House built from LEGO parts"></canvas>
-    <div class="loading" id="loading"><div class="loading-inner"><div class="spinner"></div><p>Laying the first brick…</p></div></div>
 
-    <!-- explore mode -->
-    <aside class="panel explore-only" id="explore-panel">
-      <section>
+    <header class="bar">
+      <div class="brand">
+        <svg class="mark" viewBox="0 0 40 40" aria-hidden="true"><path d="M4 36V18L13 8l9 10v18M22 36V14l7-8 7 8v22M4 36h32" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/><rect x="10" y="22" width="5" height="7" fill="currentColor"/><rect x="26" y="18" width="5" height="6" fill="var(--amber)"/></svg>
+        <div class="brand-text">
+          <h1>The Murder House</h1>
+          <p id="brand-sub">1120 Westchester Pl. · Los Angeles</p>
+        </div>
+      </div>
+      <nav class="tabs" role="tablist" aria-label="Mode">
+        <button role="tab" id="tab-explore" data-mode="explore" aria-selected="true"><svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z M12 12l8-4.5 M12 12v9 M12 12L4 7.5"/></svg><span>3D house</span></button>
+        <button role="tab" id="tab-booklet" data-mode="booklet" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M3 5c3-1.3 6-1.3 9 .8 3-2.1 6-2.1 9-.8v14c-3-1.3-6-1.3-9 .8-3-2.1-6-2.1-9-.8z M12 5.8v14.8"/></svg><span>Instructions</span></button>
+        <button role="tab" id="tab-build" data-mode="build" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M4 11h16v8H4z M7 11V8h4v3 M13 11V8h4v3"/></svg><span>Build it yourself</span></button>
+        <button role="tab" id="tab-parts" data-mode="parts" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M5 5h14v14H5z M5 10h14 M10 10v9"/></svg><span>Parts &amp; buying</span></button>
+      </nav>
+      <div class="radio" id="radio">
+        <button class="radio-play" id="radio-play" aria-label="Play music" title="Play music">
+          <svg viewBox="0 0 24 24" class="i-play"><path d="M7 4l13 8-13 8z"/></svg>
+          <svg viewBox="0 0 24 24" class="i-pause"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>
+        </button>
+        <button class="radio-station" id="radio-station" aria-haspopup="true" aria-expanded="false">
+          <span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+          <span class="radio-text"><b id="radio-name">Murder House Lofi</b><small id="radio-track">tap play · built-in radio</small></span>
+          <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <input type="range" id="radio-vol" min="0" max="100" value="60" aria-label="Volume">
+        <div class="radio-menu" id="radio-menu" hidden></div>
+      </div>
+    </header>
+
+    <div class="loading" id="loading"><div class="loading-inner"><div class="brick-loader" aria-hidden="true"><i></i><i></i><i></i></div><p>Laying the first brick…</p></div></div>
+
+    <!-- explore mode: floor modules on the right, dock at the bottom -->
+    <aside class="floors explore-only" id="floors" aria-label="Floors">
+      <div class="floors-head">
         <h2>Floors</h2>
-        <div class="chips" id="level-chips"></div>
-      </section>
-      <section>
-        <h2>View</h2>
-        <div class="seg" id="view-buttons">
-          <button data-view="front">Street</button><button data-view="back">Dollhouse</button><button data-view="top">Above</button>
-        </div>
-        <label class="slider"><span>Lift floors apart</span><input type="range" id="explode" min="0" max="100" value="0"></label>
-        <div class="toggles">
-          <label class="switch"><input type="checkbox" id="night"><span>Night</span></label>
-          <label class="switch"><input type="checkbox" id="spin"><span>Turntable</span></label>
-        </div>
-      </section>
-      <section>
-        <h2>Build timeline</h2>
-        <div class="timeline">
-          <button class="icon-btn" id="tl-play" aria-label="Play the build">▶</button>
-          <input type="range" id="tl" min="0" max="1" value="1" aria-label="Build step">
-        </div>
-        <p class="tl-label" id="tl-label"></p>
-      </section>
-      <p class="hint">Drag to orbit · scroll to zoom · right-drag to pan · hover a brick to identify it</p>
+        <button class="txt-btn" id="floors-all" title="Put every floor back on the house">Close up</button>
+      </div>
+      <ol class="floor-stack" id="floor-stack"></ol>
+      <button class="lift-btn" id="lift" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 18h16 M4 13h16 M4 8h16 M12 2v4 M9.5 4.5L12 2l2.5 2.5"/></svg><span>Lift the floors apart</span></button>
     </aside>
+
+    <div class="dock explore-only" id="dock">
+      <div class="dock-group seg" id="view-buttons" role="group" aria-label="Camera">
+        <button data-view="hero" title="Street view"><svg viewBox="0 0 24 24"><path d="M3 20h18 M5 20V10l7-5 7 5v10 M10 20v-5h4v5"/></svg><span>Street</span></button>
+        <button data-view="back" title="Look into the rooms from the back"><svg viewBox="0 0 24 24"><path d="M4 20V9l8-5 8 5v11z M4 13h16 M12 9v11"/></svg><span>Dollhouse</span></button>
+        <button data-view="left" title="Garden side"><svg viewBox="0 0 24 24"><path d="M12 21v-8 M12 13c-4 0-6-3-6-6 3 0 6 2 6 6z M12 11c0-4 3-6 6-6 0 3-2 6-6 6z"/></svg><span>Side</span></button>
+        <button data-view="top" title="Bird's-eye view"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/></svg><span>Above</span></button>
+      </div>
+      <div class="dock-group timeline">
+        <button class="round-btn" id="tl-play" aria-label="Play the build"><svg viewBox="0 0 24 24" class="i-play"><path d="M7 4l13 8-13 8z"/></svg><svg viewBox="0 0 24 24" class="i-pause"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg></button>
+        <div class="tl-body">
+          <input type="range" id="tl" min="0" max="1" value="1" aria-label="Build step">
+          <p class="tl-label" id="tl-label"></p>
+        </div>
+      </div>
+      <div class="dock-group toggles">
+        <button class="tog" id="night" aria-pressed="false" title="Night: lamps on inside"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/></svg><span>Night</span></button>
+        <button class="tog" id="spin" aria-pressed="false" title="Turntable"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 11-3-6.2 M20 4v5h-5"/></svg><span>Spin</span></button>
+        <button class="tog" id="hd" aria-pressed="true" title="High quality: soft shadows between the bricks (turn off on slow computers)"><svg viewBox="0 0 24 24"><path d="M3 6h18v12H3z M7 9v6 M11 9v6 M7 12h4 M14 9v6h2a3 3 0 000-6z"/></svg><span>HD</span></button>
+      </div>
+    </div>
+    <p class="hint explore-only" id="hint">Drag to turn · scroll or pinch to zoom · right-drag to move · click a brick to see what it is</p>
     <div class="tip" id="tip" hidden></div>
     <div class="info-card" id="info-card" hidden></div>
 
     <!-- build mode -->
     <div class="build-hud build-only" id="build-hud">
-      <div class="build-top">
+      <div class="build-card">
         <div class="build-step">
           <span class="build-num" id="b-num">1</span>
-          <div><b id="b-title">Base plates</b><small id="b-sub">Bag 1</small></div>
+          <div class="build-title"><b id="b-title">Base plates</b><small id="b-sub">Bag 1</small></div>
         </div>
-        <div class="build-stats"><span id="b-placed">0</span> placed by hand · <span id="b-time">0:00</span></div>
+        <div class="build-progress"><i id="b-bar"></i></div>
+        <div class="build-stats"><span><b id="b-placed">0</b> placed by hand</span><span id="b-time">0:00</span></div>
+      </div>
+      <div class="build-bottom">
+        <div class="tray" id="tray" aria-label="Parts for this step"></div>
         <div class="build-actions">
-          <button id="b-prev" title="Previous step">◀ Step</button>
-          <button id="b-hint" aria-pressed="true" title="Show or hide the outlines of where the parts go">Spots shown</button>
-          <button id="b-auto" title="Let the parts snap in by themselves">Auto-place</button>
-          <button id="b-next" class="primary" title="Next step">Step ▶</button>
+          <button id="b-prev" class="ghost" title="Previous step"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+          <button id="b-hint" class="ghost" aria-pressed="true" title="Show or hide where the parts go">Spots shown</button>
+          <button id="b-auto" class="ghost" title="Let the parts snap in by themselves">Auto-place</button>
+          <button id="b-next" class="primary" title="Next step">Next step <svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
         </div>
       </div>
-      <div class="tray" id="tray" aria-label="Parts for this step"></div>
       <div class="toast" id="toast" hidden></div>
     </div>
 
     <!-- instruction booklet -->
     <section class="booklet booklet-only" id="booklet" aria-label="Instruction booklet">
-      <div class="spread" id="spread"></div>
-      <div class="bk-nav">
-        <button id="bk-prev" aria-label="Previous pages">◀</button>
-        <select id="bk-jump" aria-label="Jump to"></select>
+      <div class="desk" id="desk">
+        <div class="book" id="book">
+          <div class="sheet left" id="pg-left"></div>
+          <div class="sheet right" id="pg-right"></div>
+          <div class="leaf" id="leaf" hidden>
+            <div class="face front" id="leaf-front"></div>
+            <div class="face back" id="leaf-back"></div>
+          </div>
+          <div class="gutter" aria-hidden="true"></div>
+          <div class="cast" id="cast" aria-hidden="true"></div>
+        </div>
+      </div>
+      <div class="bk-bar">
+        <button class="round-btn" id="bk-prev" aria-label="Previous pages"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <select id="bk-jump" aria-label="Jump to a chapter"></select>
         <input type="range" id="bk-page" min="0" max="1" value="0" aria-label="Page">
         <span id="bk-count" class="bk-count"></span>
-        <button id="bk-next" aria-label="Next pages">▶</button>
+        <button class="round-btn" id="bk-next" aria-label="Next pages"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
       </div>
     </section>
 

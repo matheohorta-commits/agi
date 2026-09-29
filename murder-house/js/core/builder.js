@@ -119,6 +119,25 @@ export class ModelBuilder {
     return idx;
   }
 
+  // Build something only if it fits: run fn(); if it caused any overlap, take all of it out again.
+  tryBuild(fn) {
+    const n0 = this.parts.length, e0 = this.errors.length;
+    try { fn(); } catch { this.errors.push('tryBuild threw'); }
+    if (this.errors.length === e0) return true;
+    for (let i = this.parts.length - 1; i >= n0; i--) {
+      const q = this.parts[i], p = part(q.id);
+      if (!p.insert) {
+        if (q.up) { for (const [k, v] of this.occ) if (v === i) this.occ.delete(k); }
+        else { const { out, h } = this.cells(q.id, q.x, q.y, q.z, q.r); for (const [cx, cz] of out) for (let j = 0; j < h; j++) { const k = KEY(cx, q.y + j, cz); if (this.occ.get(k) === i) this.occ.delete(k); } }
+      }
+      for (const [u, v] of studCells(p)) { const [dx, dz] = rotCell(p, q.r, u, v); const k = KEY(q.x + dx, q.y + p.h, q.z + dz); if (this.studs.get(k) === i) this.studs.delete(k); }
+    }
+    this.parts.length = n0;
+    this.errors.length = e0;
+    this.figs = this.figs.filter((f) => f < n0);
+    return false;
+  }
+
   tryAdd(id, color, x, y, z, r = 0, extra = {}) {
     return this.fits(id, x, y, z, r) ? this.add(id, color, x, y, z, r, extra) : -1;
   }

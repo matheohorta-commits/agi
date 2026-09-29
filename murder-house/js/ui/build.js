@@ -69,6 +69,8 @@ export class BuildMode {
   applyVisibility() {
     const { sc, stepOf } = this.app;
     sc.hiddenLevels.clear();
+    sc.hiddenModules = new Set();
+    for (const m in sc.moduleLift) sc.moduleLift[m] = 0;
     sc.explode = 0;
     sc.setVisibility((i) => stepOf[i] < this.n || this.placed.has(i));
     sc.setHighlight([...this.placed]);
@@ -84,6 +86,8 @@ export class BuildMode {
     document.getElementById('b-title').textContent = s.name;
     document.getElementById('b-sub').textContent = `Bag ${s.bag} · step ${s.n} of ${this.app.steps.length}`;
     document.getElementById('b-placed').textContent = this.byHand;
+    const done = (s.n - 1 + (s.parts.length ? this.placed.size / s.parts.length : 0)) / this.app.steps.length;
+    document.getElementById('b-bar').style.width = (100 * done).toFixed(2) + '%';
     this.tray.innerHTML = '';
     const rem = this.remaining();
     for (const L of s.lots) {

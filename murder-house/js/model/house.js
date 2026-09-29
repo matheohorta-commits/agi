@@ -105,6 +105,8 @@ export function buildHouse() {
     for (const [x, z] of cells) { T(x, y0 - 3, z); T(x, y0 + h, z); }
   };
   const locator = (x, z, i, n) => i === 0 || i === n - 1 || i % 4 === 2;
+  // try a small build at the first of several spots where it fits
+  const maybe = (fn, ...cands) => cands.some((c) => mb.tryBuild(() => fn(...c)));
 
   // Side chimneys: a 3 x 4 brick breast against the side wall, built floor by floor so every
   // module carries its own piece of chimney (tied to the module's floor plate) and still lifts off.
@@ -160,6 +162,7 @@ export function buildHouse() {
   const spot = (x0, z0, x1, z1) => labSpots.push(...rectCells({ x0, z0, x1, z1 }));
   spot(19, 20, 21, 26); spot(20, 18, 22, 19); spot(7, 12, 13, 13); spot(33, 12, 35, 14);
   spot(26, 12, 30, 14); spot(36, 23, 40, 24); spot(10, 22, 12, 24); spot(8, 25, 10, 30); spot(23, 12, 25, 16); spot(12, 16, 14, 18);
+  spot(28, 20, 30, 22); spot(37, 16, 39, 18); spot(33, 26, 35, 28); spot(7, 16, 9, 18);
   const innerA = [...rectCells({ x0: 16, z0: 11, x1: 17, z1: 29 }), ...rectCells({ x0: 31, z0: 11, x1: 32, z1: 29 })];
   const bsmtInner = fp.filter(([x, z]) => !extSet.has(key(x, z)));
   mb.reserve([...labSpots, ...innerA], 1, 2);
@@ -208,6 +211,10 @@ export function buildHouse() {
   F.gurney(mb, 8, 1, 25, 0);
   F.labBench(mb, 23, 1, 12, 1);
   mb.add('37776', 'black', 12, 1, 16); mb.add('30103', 'black', 13, 1, 17);
+  F.crate(mb, 28, 1, 20, 'reddishBrown', 'open'); F.crate(mb, 28, 4, 20, 'darkBrown', 'web');
+  mb.add('2489', 'darkBrown', 37, 1, 16);
+  F.crate(mb, 33, 1, 26, 'darkBrown', 'open'); mb.add('37762', 'white', 33, 4, 26); mb.add('34172', 'white', 34, 4, 27); mb.add('37776', 'black', 34, 4, 26); mb.add('3070b', 'darkBrown', 33, 4, 27);
+  F.crate(mb, 7, 1, 16, 'reddishBrown', 'open'); mb.add('95228', 'transGreen', 7, 4, 16); mb.add('95228', 'transBlack', 8, 4, 17); mb.add('3899', 'white', 8, 4, 16); mb.add('3070b', 'reddishBrown', 7, 4, 17);
 
   // =================================================================== MODULE B
   mb.section('Ground floor slab', { bag: 3, module: 'B', level: 'ground', view: 'top', maxStep: 10, settle: true });
@@ -294,6 +301,11 @@ export function buildHouse() {
   F.bookshelf(mb, 15, gF, 11, 3, 5, 3);
   F.floorLamp(mb, 7, gF, 23, 'darkRed');
   F.floorLamp(mb, 7, gF, 16, 'tan');
+  maybe((x, z) => F.grandfatherClock(mb, x, gF, z), [7, 11], [8, 11], [14, 11]);
+  maybe((x, z) => F.sideTable(mb, x, gF, z, 'reddishBrown', 'lamp'), [12, 17], [13, 17], [10, 17]);
+  maybe((x, z) => F.sideTable(mb, x, gF, z, 'reddishBrown', 'vase'), [12, 22], [13, 22], [10, 22]);
+  maybe((x, z) => F.vase(mb, x, gF, z, 'darkBlue', 'red'), [9, 29], [10, 29], [14, 29]);
+  maybe((x, z) => F.globe(mb, x, gF, z), [15, 20], [15, 24], [15, 26]);
   F.pottedPlant(mb, 7, gF, 29, true);
 
   mb.section('Foyer', { bag: 4, level: 'ground', view: 'back' });
@@ -302,6 +314,9 @@ export function buildHouse() {
   mb.add('3070b', 'reddishBrown', 25, gF + 4, 25); mb.add('3069b', 'reddishBrown', 24, gF + 4, 26);
   F.pottedPlant(mb, 30, gF, 27, false); F.pottedPlant(mb, 26, gF, 27, false);
   mb.add('4079b', 'darkRed', 21, gF, 21, 1);
+  maybe((x, z) => F.coatRack(mb, x, gF, z), [30, 20], [29, 20], [30, 22]);
+  maybe((x, z) => F.bench(mb, x, gF, z, 0, 'darkBrown'), [25, 20], [24, 20], [26, 20]);
+  maybe((x, z) => F.vase(mb, x, gF, z, 'sandBlue', 'yellow'), [22, 20], [20, 20], [30, 24]);
 
   mb.section('Ben\'s office', { bag: 4, level: 'ground', view: 'back' });
   F.desk(mb, 35, gF, 21, 0);
@@ -310,6 +325,9 @@ export function buildHouse() {
   F.sofa(mb, 33, gF, 25, 1, 'darkBrown', 'darkRed');
   F.floorLamp(mb, 33, gF, 29, 'darkGreen');
   F.pottedPlant(mb, 38, gF, 28, false);
+  maybe((x, z, r) => F.filingCabinet(mb, x, gF, z, r), [39, 20, 0], [37, 20, 0], [40, 26, 3]);
+  maybe((x, z) => F.globe(mb, x, gF, z), [40, 22], [39, 22], [36, 28]);
+  maybe((x, z) => F.sideTable(mb, x, gF, z, 'darkBrown', 'lamp'), [32, 24], [32, 29], [34, 29]);
 
   mb.section('Dining room', { bag: 4, level: 'ground', view: 'back' });
   F.table(mb, 22, gF, 13, 4, 4, 0, 'reddishBrown', false);
@@ -321,12 +339,17 @@ export function buildHouse() {
   F.chair(mb, 22, gF, 17, 2); F.chair(mb, 24, gF, 17, 2);
   F.sideboard(mb, 27, gF, 11, 0);
   F.floorLamp(mb, 17, gF, 11, 'tan');
+  maybe((x, z, r) => F.chinaCabinet(mb, x, gF, z, r), [19, 11, 0], [22, 11, 0], [18, 11, 0]);
+  maybe((x, z) => F.grandfatherClock(mb, x, gF, z, 'reddishBrown'), [26, 11], [25, 11], [30, 13]);
+  maybe((x, z) => F.vase(mb, x, gF, z, 'white', 'red'), [30, 18], [17, 18], [30, 17]);
 
   mb.section('Kitchen', { bag: 4, level: 'ground', view: 'back' });
   F.counter(mb, 39, gF, 11, 3, 7, { layout: { 0: 'cab', 3: 'stove', 5: 'sink' } });
   F.fridge(mb, 33, gF, 11, 0);
   F.table(mb, 34, gF, 15, 2, 2, 0, 'white', 'white');
   F.chair(mb, 32, gF, 15, 1, 'white');
+  maybe((x, z, r) => F.kitchenIsland(mb, x, gF, z, r), [36, 15, 0], [37, 14, 0], [36, 16, 0], [37, 15, 0]);
+  maybe((x, z) => F.vase(mb, x, gF, z, 'white', 'yellow'), [32, 11], [34, 18], [32, 18]);
 
   mb.section('Hang the paintings', { bag: 4, level: 'ground', view: 'back' });
   hangArt();
@@ -418,6 +441,10 @@ export function buildHouse() {
   F.wardrobe(mb, 13, uF, 11, 0, 'reddishBrown', 'medNougat', 3);
   F.dresser(mb, 10, uF, 28, 2);
   F.chair(mb, 13, uF, 24, 3, 'darkRed');
+  maybe((x, z, r) => F.vanity(mb, x, uF, z, r), [13, 30, 2], [12, 30, 2], [15, 20, 3]);
+  maybe((x, z) => F.sideTable(mb, x, uF, z, 'reddishBrown', 'vase'), [7, 29], [8, 29], [7, 26]);
+  maybe((x, z) => F.grandfatherClock(mb, x, uF, z), [15, 11], [15, 26], [15, 13]);
+  maybe((x, z) => F.floorLamp(mb, x, uF, z, 'darkRed'), [7, 22], [7, 11], [7, 24]);
 
   mb.section('Violet\'s room', { bag: 6, level: 'upper', view: 'back' });
   F.bed(mb, 35, uF, 26, 3, { W: 2, D: 6, frame: 'black', blanket: 'darkBlue' });
@@ -425,11 +452,16 @@ export function buildHouse() {
   F.recordPlayer(mb, 39, uF, 20);
   F.bookshelf(mb, 40, uF, 22, 3, 3, 2, 'black');
   F.floorLamp(mb, 32, uF, 28, 'black');
+  maybe((x, z, r) => F.vanity(mb, x, uF, z, r, 'black'), [34, 29, 2], [37, 29, 2], [36, 29, 2]);
+  maybe((x, z) => F.vase(mb, x, uF, z, 'black', 'red'), [40, 29], [39, 29], [40, 21]);
+  maybe((x, z) => mb.add('4079b', 'darkRed', x, uF, z, 3), [38, 26], [33, 25], [38, 24]);
 
   mb.section('Upstairs study', { bag: 6, level: 'upper', view: 'back' });
   F.bookshelf(mb, 26, uF, 20, 0, 5, 3);
   F.chair(mb, 29, uF, 26, 2, 'darkRed');
   F.tableLamp(mb, 26, uF, 27, 'darkGreen');
+  maybe((x, z) => F.globe(mb, x, uF, z), [30, 21], [30, 24], [27, 26]);
+  maybe((x, z) => F.sideTable(mb, x, uF, z, 'darkBrown', 'vase'), [28, 28], [30, 28], [26, 25]);
 
   mb.section('The nursery', { bag: 6, level: 'upper', view: 'back' });
   F.crib(mb, 18, uF, 12, 0);
@@ -438,12 +470,17 @@ export function buildHouse() {
   F.rockingHorse(mb, 26, uF, 16, 0);
   F.toyBlocks(mb, 21, uF, 16);
   F.dresser(mb, 17, uF, 16, 1, 'white', 'white');
+  maybe((x, z) => F.vase(mb, x, uF, z, 'sandBlue', 'white'), [29, 11], [30, 11], [30, 13]);
+  maybe((x, z) => mb.add('4079b', 'white', x, uF, z, 0), [28, 14], [25, 12], [29, 16]);
+  maybe((x, z) => F.sideTable(mb, x, uF, z, 'white', 'lamp'), [17, 11], [20, 11], [17, 13]);
 
   mb.section('Bathroom', { bag: 6, level: 'upper', view: 'back' });
   F.bathtub(mb, 37, uF, 11, 0);
   F.toilet(mb, 33, uF, 11, 0);
   F.pedestalSink(mb, 35, uF, 11, 0);
   mb.add('92410', 'white', 32, uF, 16, 1); mb.add('4533', 'white', 33, uF, 16, 1);
+  maybe((x, z) => F.pottedPlant(mb, x, uF, z, false), [40, 18], [40, 16], [36, 18]);
+  maybe((x, z) => F.vase(mb, x, uF, z, 'white', 'white'), [36, 18], [37, 18], [38, 18]);
 
   mb.section('Hang the pictures', { bag: 6, level: 'upper', view: 'back' });
   hangArt();
@@ -503,6 +540,11 @@ export function buildHouse() {
   F.trunk(mb, 21, ey, 16, 1, 'darkBrown');
   F.rockingHorse(mb, 25, ey, 17, 1);
   mb.add('37776', 'black', 20, ey, 26);
+  const cobwebCrate = (x, z, col) => F.crate(mb, x, ey, z, col, (x + z) % 3 ? 'web' : 'lid');
+  for (const c of [[17, 20], [22, 12], [26, 24], [28, 13], [18, 27], [24, 26], [29, 21]]) maybe((x, z) => cobwebCrate(x, z, (x + z) % 2 ? 'reddishBrown' : 'darkBrown'), c, [c[0] + 1, c[1]], [c[0], c[1] + 1]);
+  maybe((x, z) => F.grandfatherClock(mb, x, ey, z, 'black'), [29, 25], [18, 17], [29, 17]);
+  for (const c of [[23, 20], [27, 16], [18, 23]]) maybe((x, z) => mb.add('37776', 'black', x, ey, z), c, [c[0] + 1, c[1]]);
+  maybe((x, z) => F.vase(mb, x, ey, z, 'darkRed', 'white'), [21, 24], [22, 24]);
   const lastD = mb.cur;
   mb.use(boardsD);
   mb.reserve([[20, 20], [21, 20]], ey, ey + 1);
@@ -604,6 +646,15 @@ export function buildHouse() {
   for (const [x, z] of [[13, 41], [36, 41], [22, 42], [4, 42], [44, 36]]) mb.tryAdd('24866', ['red', 'white', 'yellow'][(x + z) % 3], x, Y.terrace + 1, z);
   for (const [x, z] of [[33, 35], [23, 37]]) if (mb.tryAdd('3941', 'orange', x, Y.terrace + 1, z) >= 0) mb.add('6141', 'green', x, Y.terrace + 4, z);
   if (mb.tryAdd('3062b', 'orange', 24, Y.terrace + 1, 35) >= 0) mb.add('6141', 'green', 24, Y.terrace + 4, 35);
+  const ty = Y.terrace + 1;
+  F.flowerBed(mb, [...rectCells({ x0: 6, z0: 32, x1: 17, z1: 33 }), ...rectCells({ x0: 6, z0: 35, x1: 17, z1: 36 })], ty, 11);
+  F.flowerBed(mb, [...rectCells({ x0: 32, z0: 31, x1: 42, z1: 32 }), ...rectCells({ x0: 32, z0: 34, x1: 42, z1: 35 })], ty, 23);
+  F.flowerBed(mb, rectCells({ x0: 10, z0: 38, x1: 17, z1: 40 }), ty, 37);
+  F.flowerBed(mb, rectCells({ x0: 34, z0: 38, x1: 38, z1: 40 }), ty, 41);
+  F.hedge(mb, 3, 42, 22, 'x', ty);
+  F.hedge(mb, 34, 42, 12, 'x', ty);
+  F.hedge(mb, 2, 31, 10, 'z', ty);
+  F.hedge(mb, 45, 31, 10, 'z', ty);
 
   mb.section('Backyard gazebo', { bag: 10, level: 'gazebo', view: 'back', maxStep: 12 });
   const gz = { x0: 8, z0: 1 };
@@ -630,6 +681,11 @@ export function buildHouse() {
   F.tree(mb, 1, 1, 12, 5, 'green');
   mb.tryAdd('6064', 'green', 44, 1, 6); mb.tryAdd('6064', 'green', 29, 1, 2);
   F.bench(mb, 40, 1, 8, 2);
+  maybe((x, z) => F.birdBath(mb, x, 1, z), [26, 3], [25, 2], [31, 5]);
+  F.flowerBed(mb, [...rectCells({ x0: 32, z0: 8, x1: 40, z1: 10 }), ...rectCells({ x0: 17, z0: 9, x1: 22, z1: 10 })], 1, 53);
+  F.hedge(mb, 46, 1, 9, 'z', 1);
+  F.hedge(mb, 0, 1, 10, 'z', 1);
+  F.flowerBed(mb, rectCells({ x0: 2, z0: 2, x1: 6, z1: 5 }), 1, 61);
 
   // =================================================================== the residents
   mb.section('The residents', { bag: 11, level: 'figs', view: 'back', maxStep: 1 });

@@ -232,6 +232,25 @@ class Synth {
     const f = this.ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 2400;
     o.connect(f).connect(g); o.start(t); o.stop(t + 0.09);
   }
+  // a page of the booklet turning: a soft paper swish
+  page() {
+    if (!this.ctx) this._init();
+    const c = this.ctx, t = c.currentTime;
+    if (!this._paper) {
+      const n = Math.floor(c.sampleRate * 0.5);
+      this._paper = c.createBuffer(1, n, c.sampleRate);
+      const d = this._paper.getChannelData(0);
+      let last = 0;
+      for (let i = 0; i < n; i++) { last = last * 0.6 + (Math.random() * 2 - 1) * 0.4; d[i] = last; }
+    }
+    const src = c.createBufferSource(); src.buffer = this._paper;
+    const f = c.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 0.8;
+    f.frequency.setValueAtTime(700, t); f.frequency.exponentialRampToValueAtTime(3200, t + 0.28);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.16, t + 0.06); g.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+    src.connect(f).connect(g).connect(c.destination);
+    src.start(t); src.stop(t + 0.45);
+  }
   chime() {
     if (!this.ctx) this._init();
     const t = this.ctx.currentTime;
