@@ -319,7 +319,7 @@
       des.appendChild(this.pred);
       this.startBtn = h('button.bigbtn', { style: { width: '100%', marginTop: '8px' } }, 'START TRAINING');
       this.startBtn.addEventListener('click', () => {
-        if (S.training) { if (confirm('Cancel the current training run? Progress is lost.')) G.Sim.cancelTraining(); this.update(true); return; }
+        if (S.training) { G.Modals.confirm('CANCEL TRAINING RUN?', 'Progress on the current run is lost.', () => { G.Sim.cancelTraining(); this.update(true); }, 'CANCEL RUN'); return; }
         if (G.Sim.startTraining(cfg.N, cfg.D, cfg.rl)) { G.Audio.bigBuy(); this.update(true); }
       });
       des.appendChild(this.startBtn);
@@ -423,7 +423,7 @@
           const capNow = G.Sim.modelCap(m) + D.capTTC + D.capTTT + D.capAgents + D.M.capFlat;
           const nameEl = h('span.mn', m.name);
           // look the model up on click: indices shift when old models are dropped
-          nameEl.addEventListener('dblclick', () => { const n = prompt('Rename model:', m.name); const i = S.models.indexOf(m); if (n && i >= 0) { G.Sim.renameModel(i, n); this.update(true); } });
+          nameEl.addEventListener('dblclick', () => G.Modals.prompt('RENAME MODEL', m.name, (n) => { const i = S.models.indexOf(m); if (i >= 0) { G.Sim.renameModel(i, n); this.update(true); } }));
           const btn = h('button.btn', idx === S.deployed ? 'LIVE' : 'DEPLOY');
           btn.disabled = idx === S.deployed;
           btn.addEventListener('click', () => { const i = S.models.indexOf(m); if (i >= 0) { G.Sim.deploy(i); G.Audio.buy(); } this.update(true); });
@@ -1054,10 +1054,10 @@
             e.stopPropagation();
             const S = G.S;
             if (S.challenge && S.challenge.id === c.id) {
-              if (confirm('Abandon this challenge?')) { G.Sim.abandonChallenge(); this.update(); }
+              G.Modals.confirm('ABANDON CHALLENGE?', `Stop "${c.name}"? Your current run continues without the challenge rules.`, () => { G.Sim.abandonChallenge(); this.update(); }, 'ABANDON');
               return;
             }
-            if (confirm(`Start "${c.name}"?\n\n${c.rules}\n\nThis resets your current run.`)) { G.Sim.startChallenge(c.id); G.Main.save(); }
+            G.Modals.confirm(`START "${c.name.toUpperCase()}"?`, `${c.rules}\n\nReward: ${c.reward}\n\nThis resets your current run.`, () => { G.Sim.startChallenge(c.id); G.Main.save(); }, 'START CHALLENGE');
           });
           const el = h('div.item', h('img.ic', { src: UI.icon(c.icon, 3) }), h('div', h('div.name', c.name), h('div.desc', c.rules), st), btn);
           el._c = c; el._st = st; el._btn = btn;

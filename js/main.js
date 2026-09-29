@@ -68,8 +68,28 @@
     errors.push({ key, where, msg, stack: String((e && e.stack) || ''), at: new Date().toISOString() });
     if (errors.length > 30) errors.shift();
     if (errors.length <= 3 && G.UI && G.UI.toast) {
-      try { G.UI.toast(`⚠ Something went wrong (${msg.slice(0, 90)}). The game keeps running — Settings → Copy error log to report it.`, 'bad'); } catch (e2) { /* ignore */ }
+      try {
+        const t = G.UI.toast(`⚠ Error: ${msg.slice(0, 140)} — click here to copy the details`, 'bad', 15000);
+        if (t) { t.style.cursor = 'pointer'; t.addEventListener('click', Main.copyErrors); }
+      } catch (e2) { /* ignore */ }
     }
+  };
+  /** full error report (build, browser, stack traces) for bug reports */
+  Main.errorReport = () => `FEEL THE AGI build ${root.FTAGI_BUILD || '?'} · ${navigator.userAgent}\n` +
+    `run ${G.S ? `${G.S.lab} t=${Math.round(G.S.run.time)}s models=${G.S.models.length} deployed=${G.S.deployed} training=${!!G.S.training}` : '-'}\n\n` +
+    errors.map((e) => `[${e.at}] ${e.key}\n${e.stack}`).join('\n\n');
+  Main.copyErrors = () => {
+    const text = Main.errorReport();
+    const done = () => G.UI.toast('Error details copied — paste them in your bug report', 'good');
+    const fallback = () => {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); done(); } catch (e) { /* ignore */ }
+      ta.remove();
+    };
+    try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); }
   };
   function guard(where, fn) {
     try { fn(); } catch (e) { Main.reportError(where, e); }

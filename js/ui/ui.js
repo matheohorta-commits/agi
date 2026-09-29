@@ -81,6 +81,7 @@
     const t = h('div.toast.' + (kind || 'info'), text);
     box.appendChild(t);
     setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 320); }, ms || (kind === 'bad' ? 5000 : 3000));
+    return t;
   };
   let bannerTimer = 0;
   UI.banner = (kicker, title, textStr) => {

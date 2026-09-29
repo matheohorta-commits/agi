@@ -38,10 +38,9 @@
     for (const id of ['modelName', 'capBig', 'capBar', 'modelSub', 'benches', 'rankBadge', 'trainBar', 'trainPct', 'trainEta', 'lossMini', 'allocBody', 'vibeKnob', 'vibeText', 'vibeNum', 'feed', 'objectives', 'buffs', 'buffPanel', 'autoAlloc']) E[id] = document.getElementById(id);
     // model panel interactions
     E.modelName.addEventListener('dblclick', () => {
-      const S = G.S;
-      if (S.deployed < 0) return;
-      const n = prompt('Rename your model:', S.models[S.deployed].name);
-      if (n) G.Sim.renameModel(S.deployed, n);
+      const S = G.S, m = S.models[S.deployed];
+      if (!m) return;
+      G.Modals.prompt('RENAME YOUR MODEL', m.name, (n) => G.Sim.renameModel(S.models.indexOf(m), n));
     });
     G.UI.tip(E.capBig, capTip);
     G.UI.tip(E.capBar, capTip);

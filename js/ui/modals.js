@@ -48,7 +48,7 @@
     if (o.buttons) {
       const f = h('div.mf');
       o.buttons.forEach((bb) => {
-        const b = h('button.' + (bb.cls || 'bigbtn'), bb.label);
+        const b = h('button.' + (bb.cls || 'bigbtn').trim().split(/\s+/).join('.'), bb.label); // 'bigbtn alt' → button.bigbtn.alt
         if (bb.disabled) b.disabled = true;
         b.addEventListener('click', () => { if (bb.keep !== true) M.close(); bb.fn && bb.fn(); });
         f.appendChild(b);
@@ -70,6 +70,24 @@
     else setTimeout(M.checkStory, 200);
   };
   document.addEventListener('keydown', (e) => { if (e.code === 'Escape' && openNow && openNow.closable !== false && !G.Pack.active) M.close(); });
+
+  /* In-game replacements for window.confirm / window.prompt: those throw in the Electron (Steam) build
+   * ("prompt() is and will not be supported") and are blocked in some embedded browsers. */
+  M.confirm = (title, text, onYes, yesLabel) => M.open({
+    title, body: text,
+    buttons: [{ label: 'CANCEL', cls: 'bigbtn alt' }, { label: yesLabel || 'OK', fn: onYes }],
+  });
+  M.prompt = (title, value, onOk) => {
+    const inp = h('input.textin', { type: 'text', maxLength: 40 });
+    inp.value = value || '';
+    const ok = () => { const v = inp.value.trim(); M.close(); if (v) onOk(v); };
+    inp.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Enter') ok(); if (e.key === 'Escape') M.close(); });
+    M.open({
+      title, body: inp,
+      buttons: [{ label: 'CANCEL', cls: 'bigbtn alt' }, { label: 'OK', keep: true, fn: ok }],
+      onOpen: () => { inp.focus(); inp.select(); },
+    });
+  };
 
   /* ------------------------------------------------------------------ story */
   M.checkStory = () => {
@@ -212,18 +230,13 @@
     saveNow.addEventListener('click', () => { G.Main.save(); G.UI.toast('Saved.', 'good'); });
     const wipe = h('button.btn', { style: { borderColor: 'var(--red)', color: 'var(--red)' } }, 'HARD RESET');
     wipe.addEventListener('click', () => {
-      if (confirm('Delete ALL progress (including cards, lessons, achievements)? This cannot be undone.')) {
-        G.Main.hardReset();
-      }
+      M.close();
+      M.confirm('HARD RESET', 'Delete ALL progress (including cards, lessons, achievements)? This cannot be undone.', () => G.Main.hardReset(), 'DELETE EVERYTHING');
     });
     const errs = (G.Main.errors || []);
     const errBtn = h('button.btn', `COPY ERROR LOG (${errs.length})`);
     errBtn.disabled = !errs.length;
-    errBtn.addEventListener('click', () => {
-      ta.value = `FEEL THE AGI error log · ${navigator.userAgent}\n\n` + errs.map((e) => `[${e.at}] ${e.key}\n${e.stack}`).join('\n\n');
-      ta.select();
-      try { document.execCommand('copy'); G.UI.toast('Error log copied to clipboard', 'good'); } catch (e) { /* ignore */ }
-    });
+    errBtn.addEventListener('click', () => { ta.value = G.Main.errorReport(); G.Main.copyErrors(); });
     body.appendChild(h('div', { style: { marginTop: '10px' } }, ta));
     body.appendChild(h('div.row', { style: { gap: '6px', marginTop: '6px', flexWrap: 'wrap' } }, exp, imp, saveNow, errBtn, wipe));
     body.appendChild(h('div.tiny', { style: { marginTop: '10px' } }, 'Keys: SPACE = hold to open crates · ESC = close · 1-9 = switch tabs · C = click the model'));
