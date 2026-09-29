@@ -215,6 +215,7 @@
     });
     bus.on('objective', (o) => { UI.toast(`✔ OBJECTIVE: ${o.text}`, 'good'); G.Audio.notify(); });
     bus.on('train:done', (m) => { G.Audio.trainDone(); UI.markTab('train'); });
+    bus.on('modelUpgrade', (e) => UI.banner('NEW MODEL DEPLOYED', e.m.name, `Capability ${e.prev.toFixed(1)} → ${e.cap.toFixed(1)}  (+${(e.cap - e.prev).toFixed(1)})`));
     bus.on('deploy', (m) => {
       const p = G.Scene.orbScreenPos();
       G.FX.burst(p.x, p.y, { n: 40, colors: ['#ffe45c', '#ffffff', '#5cf27a'] });

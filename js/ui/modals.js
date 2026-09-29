@@ -260,7 +260,7 @@
     M.open({
       title: 'HOW TO PLAY', icon: 'book', wide: true,
       html: `<p><b>1. Earn & build.</b> Click the model for early cash. Buy hardware (COMPUTE) and data sources (DATA).</p>
-<p><b>2. Train along the scaling laws.</b> In TRAIN, pick parameters (N) and tokens (D). Loss follows the Chinchilla law — bigger models need more data. Use the preset buttons for compute-optimal runs. When a run finishes, the better model deploys.</p>
+<p><b>2. Train along the scaling laws.</b> In TRAIN, press START: it trains the best model your compute and data allow, and a better model deploys automatically. The same compute and data give the same model — <b>buy data (DATA) and GPUs (COMPUTE) to train a better one</b>. Loss follows the Chinchilla law: bigger models need more data. Move the N/D sliders to size runs yourself.</p>
 <p><b>3. Split your compute.</b> Training makes better models. Serving earns money from users (bigger models and longer reasoning cost more per user). Later, AI R&D and alignment copies of your model do research for you.</p>
 <p><b>4. Research.</b> Hire researchers (TEAM) for RP. The Transformer, RLHF, Chain-of-Thought, 🍓 Strawberry, agents... each unlocks a new scaling axis.</p>
 <p><b>5. Stay aligned.</b> Past capability 160, alignment must keep up. A low safety margin causes incidents and builds hidden misalignment — which decides your ending at superintelligence.</p>

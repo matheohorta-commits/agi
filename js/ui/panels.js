@@ -163,7 +163,11 @@
       U.setText(E.trainEta, 'ETA ' + U.fmtTime(eta));
     } else {
       E.trainBar.style.width = '0%';
-      U.setText(E.trainPct, S.prestige.lessons.autotrain && S.auto.train ? 'AUTO-TRAIN: waiting...' : 'IDLE — start a run in TRAIN');
+      const out = G.Sim.trainOutlook(G.Sim.plannedRun());
+      U.setText(E.trainPct, S.prestige.lessons.autotrain && S.auto.train ? 'AUTO-TRAIN: waiting...'
+        : !out.blocker ? `IDLE — a +${out.gain.toFixed(1)} model is ready: START in TRAIN`
+        : out.blocker === 'data' ? 'IDLE — out of data: buy data (DATA tab)'
+        : out.blocker === 'compute' ? 'IDLE — need more compute (COMPUTE tab)' : 'IDLE — start a run in TRAIN');
       U.setText(E.trainEta, '');
     }
     drawLossChart(E.lossMini, tr, false);

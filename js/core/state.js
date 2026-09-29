@@ -39,7 +39,8 @@
       deployed: -1,
       bestN: 0,
       training: null,
-      trainCfg: { N: 3e5, D: 2e6, rl: false, autoDeploy: true, eta: 20 },
+      // auto: auto-size runs to the best ~N-second run (0 = manual sliders)
+      trainCfg: { N: 3e5, D: 2e6, rl: false, autoDeploy: true, eta: 20, auto: 15 },
       auto: { hw: false, src: false, power: false, train: false, research: false, hire: false, trainEta: 60, deploy: true },
       alloc: { train: 1, serve: 1, research: 0.25, align: 0.1 },
       autoAlloc: true,
@@ -111,6 +112,7 @@
     s.autoAlloc = old.autoAlloc;
     s.auto = old.auto;
     s.trainCfg.autoDeploy = old.trainCfg ? old.trainCfg.autoDeploy : true;
+    if (old.trainCfg && old.trainCfg.auto !== undefined) s.trainCfg.auto = old.trainCfg.auto;
   }
 
   G.Save = {

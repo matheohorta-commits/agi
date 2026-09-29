@@ -258,7 +258,27 @@
     const C0 = D.trainRate * eta / (rl ? 1 + G.BAL.RL_COMPUTE_FRAC : 1);
     return C.optimalND(Math.max(C0, 6 * G.BAL.MIN_PARAMS * G.BAL.MIN_TOKENS), S.tokens, D.M.kN, D.M.kD);
   };
-  Sim.startTraining = (N, Dt, rl) => {
+  const BETTER = 0.05; // capability a new model must add to count as better (auto-deploy + TRAIN tab hint agree on this)
+  /** the run START TRAINING launches. Auto-size mode (trainCfg.auto = seconds) picks the loss-optimal run of
+   * about that length with all the data and compute you have now, so pressing START always trains the best model you can. */
+  Sim.plannedRun = () => {
+    const cfg = S.trainCfg, rl = !!cfg.rl && D.M.rlBonus > 0;
+    if (cfg.auto > 0) {
+      const nd = Sim.optimalForEta(cfg.auto, rl);
+      return { N: Math.max(G.BAL.MIN_PARAMS, nd.N), D: Math.min(S.tokens, Math.max(G.BAL.MIN_TOKENS, nd.D)), rl };
+    }
+    return { N: Math.max(G.BAL.MIN_PARAMS, cfg.N), D: Math.min(S.tokens, Math.max(G.BAL.MIN_TOKENS, cfg.D)), rl };
+  };
+  /** how much a planned run would add over the live model, and if nothing: why ('data' | 'compute' | 'manual') */
+  Sim.trainOutlook = (plan) => {
+    const p = Sim.predict(plan.N, plan.D, plan.rl);
+    const next = p.capPre + p.rlBonus + (plan.N < 3e10 ? D.M.smallModelBonus : 0); // predict() already applies capPreMult
+    const gain = D.model ? next - Sim.modelCap(D.model) : next;
+    if (gain > BETTER) return { gain, blocker: null };
+    if (!(S.trainCfg.auto > 0)) return { gain, blocker: 'manual' };
+    return { gain, blocker: plan.D >= S.tokens * 0.98 ? 'data' : 'compute' };
+  };
+  Sim.startTraining = (N, Dt, rl, manual) => {
     if (S.training) return false;
     N = Math.max(G.BAL.MIN_PARAMS, N);
     Dt = Math.min(S.tokens, Math.max(G.BAL.MIN_TOKENS, Dt));
@@ -266,7 +286,7 @@
     const p = Sim.predict(N, Dt, rl);
     S.training = {
       N, D: Dt, rl, flop: p.flop, done: 0, kN: D.M.kN, kD: D.M.kD, arch: D.M.arch, rlBonus: p.rlBonus,
-      capPre: p.capPre, t: 0, startLoss: p.loss,
+      capPre: p.capPre, t: 0, startLoss: p.loss, manual: !!manual,
     };
     S.trainCfg.N = N;
     S.trainCfg.D = Dt;
@@ -333,9 +353,14 @@
     if (estCap >= 260 && tr.N < 1e11) S.stats.efficientModel = true;
     bus.emit('train:done', m);
     const cur = S.deployed >= 0 ? S.models[S.deployed] : null;
-    const better = !cur || Sim.modelCap(m) > Sim.modelCap(cur) + 0.01;
-    if (S.trainCfg.autoDeploy && better) Sim.deploy(S.models.length - 1);
-    else toast(`Training complete: ${m.name}${better ? ' — press DEPLOY in the TRAIN tab to ship it' : ' — not better than your live model, so it was not deployed'}`, 'good');
+    const better = !cur || Sim.modelCap(m) > Sim.modelCap(cur) + BETTER;
+    if (S.trainCfg.autoDeploy && better) {
+      const prev = D.cap;
+      Sim.deploy(S.models.length - 1);
+      // a run you started yourself gets a proper "new model" moment
+      if (tr.manual) bus.emit('modelUpgrade', { m, prev, cap: D.cap });
+    } else if (better) toast(`Training complete: ${m.name} — press DEPLOY in the TRAIN tab to ship it`, 'good');
+    else toast(`No improvement: ${m.name} is no better than your live model, so it stays in the list. The TRAIN tab shows what to upgrade.`, 'bad');
   }
 
   /** the model-dependent part of capability (pretraining + RL + lab perks), exactly as it counts once deployed */

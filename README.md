@@ -28,8 +28,10 @@ Saves go to `localStorage` (autosave every 15 s, plus export/import strings in S
 ## What's in it
 
 **Core loop: the scaling laws are the gameplay**
-- Pretraining uses the Chinchilla fit `L = 1.69 + 406.4/N^0.34 + 410.7/D^0.28`. You pick parameters (N) and tokens (D) for every run; compute = 6·N·D.
-  Presets give loss-optimal runs for a target duration, or cheap overtrained models that are easier to serve.
+- Pretraining uses the Chinchilla fit `L = 1.69 + 406.4/N^0.34 + 410.7/D^0.28`; compute = 6·N·D. By default START auto-sizes the
+  loss-optimal run for ~15 s / 1 / 5 / 20 min with all your data and compute, so buying GPUs and data always pays off in the next run
+  (the TRAIN tab says when you're data- or compute-limited). Move the N/D sliders to size runs yourself — e.g. cheap overtrained models
+  that are easier to serve.
 - A live train/test loss curve while training, plus log-log scaling-law plots of every model you've trained (after researching *Scaling Laws*).
 - The **data wall**: human text is finite (~300T tokens). Break through with synthetic data, RL environments, robots and world simulators.
 - Compute is split between **training**, **serving** users (bigger models and longer reasoning cost more per user — "our GPUs are melting"),

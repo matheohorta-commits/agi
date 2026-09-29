@@ -283,28 +283,33 @@
       };
       des.appendChild(sl('PARAMS N', this.nIn, this.nLbl, '<b>PARAMETERS</b><br>Bigger models learn more from the same data — but cost more to train (6·N·D FLOP) and more to serve per user.'));
       des.appendChild(sl('TOKENS D', this.dIn, this.dLbl, '<b>TRAINING TOKENS</b><br>Limited by your dataset. More data lowers loss (B/D^β term).'));
-      this.nIn.addEventListener('input', () => { cfg.N = Math.pow(10, +this.nIn.value); this.update(true); });
-      this.dIn.addEventListener('input', () => { cfg.D = Math.pow(10, +this.dIn.value); this.update(true); });
+      // moving a slider switches to manual sizing
+      this.nIn.addEventListener('input', () => { cfg.auto = 0; cfg.N = Math.pow(10, +this.nIn.value); this.update(true); });
+      this.dIn.addEventListener('input', () => { cfg.auto = 0; cfg.D = Math.pow(10, +this.dIn.value); this.update(true); });
       const presets = h('div.row', { style: { flexWrap: 'wrap', gap: '4px', margin: '6px 0' } });
-      const addP = (label, fn, tipText) => {
+      this.autoBtns = [];
+      const addP = (label, fn, tipText, eta) => {
         const b = h('button.btn', label);
         b.addEventListener('click', () => { fn(); G.Audio.tab(); this.update(true); });
         if (tipText) UI.tip(b, () => tipText);
+        if (eta) { b._eta = eta; this.autoBtns.push(b); }
         presets.appendChild(b);
       };
-      const optimal = (eta) => {
-        const nd = G.Sim.optimalForEta(eta, cfg.rl);
-        cfg.N = nd.N;
-        cfg.D = nd.D;
-      };
-      addP('⚡ 15s', () => optimal(15), 'Loss-optimal N and D for a ~15 second run at your current training speed.');
-      addP('1 MIN', () => optimal(60), 'Loss-optimal (compute-optimal) run that takes ~1 minute.');
-      addP('5 MIN', () => optimal(300));
-      addP('20 MIN', () => optimal(1200));
-      addP('MAX DATA', () => { cfg.D = S.tokens; }, 'Use your whole dataset.');
-      addP('20 TOK/PARAM', () => { cfg.N = Math.max(G.BAL.MIN_PARAMS, cfg.D / 20); }, 'Chinchilla rule of thumb: ~20 tokens per parameter.');
-      addP('SMALL & CHEAP', () => { cfg.N = Math.max(G.BAL.MIN_PARAMS, cfg.D / 200); }, 'Overtrained small model (200 tokens/param): slightly worse, but much cheaper to serve to users. Llama-style.');
+      // timed presets = auto-size mode: START always trains the best run of that length with everything you have
+      const auto = (eta) => { cfg.auto = eta; };
+      // shape presets start from the current plan, then switch to manual
+      const manual = (fn) => { const p = G.Sim.plannedRun(); cfg.N = p.N; cfg.D = p.D; cfg.auto = 0; fn(); };
+      const autoTip = (t) => `<b>AUTO-SIZE: ${t}</b><br>Every run is re-sized to the loss-optimal model you can train in ~${t} with all your data and compute. Buy GPUs and data, press START again — you get a better model.`;
+      addP('⚡ 15s', () => auto(15), autoTip('15 seconds'), 15);
+      addP('1 MIN', () => auto(60), autoTip('1 minute'), 60);
+      addP('5 MIN', () => auto(300), autoTip('5 minutes'), 300);
+      addP('20 MIN', () => auto(1200), autoTip('20 minutes'), 1200);
+      addP('MAX DATA', () => manual(() => { cfg.D = S.tokens; }), 'Manual: use your whole dataset.');
+      addP('20 TOK/PARAM', () => manual(() => { cfg.N = Math.max(G.BAL.MIN_PARAMS, cfg.D / 20); }), 'Manual: Chinchilla rule of thumb, ~20 tokens per parameter.');
+      addP('SMALL & CHEAP', () => manual(() => { cfg.N = Math.max(G.BAL.MIN_PARAMS, cfg.D / 200); }), 'Manual: overtrained small model (200 tokens/param): slightly worse, but much cheaper to serve to users. Llama-style.');
       des.appendChild(presets);
+      this.modeLine = h('div.tiny', { style: { margin: '-2px 0 6px' } });
+      des.appendChild(this.modeLine);
       this.rlBox = h('div');
       des.appendChild(this.rlBox);
       this.pred = kv([
@@ -317,10 +322,14 @@
         ['serve', 'Serving cost / user'],
       ]);
       des.appendChild(this.pred);
+      // what this run gets you — or exactly why it can't beat the live model and what to buy
+      this.hint = h('div.trainhint');
+      des.appendChild(this.hint);
       this.startBtn = h('button.bigbtn', { style: { width: '100%', marginTop: '8px' } }, 'START TRAINING');
       this.startBtn.addEventListener('click', () => {
-        if (S.training) { G.Modals.confirm('CANCEL TRAINING RUN?', 'Progress on the current run is lost.', () => { G.Sim.cancelTraining(); this.update(true); }, 'CANCEL RUN'); return; }
-        if (G.Sim.startTraining(cfg.N, cfg.D, cfg.rl)) { G.Audio.bigBuy(); this.update(true); }
+        if (G.S.training) { G.Modals.confirm('CANCEL TRAINING RUN?', 'Progress on the current run is lost.', () => { G.Sim.cancelTraining(); this.update(true); }, 'CANCEL RUN'); return; }
+        const plan = G.Sim.plannedRun();
+        if (G.Sim.startTraining(plan.N, plan.D, plan.rl, true)) { G.Audio.bigBuy(); this.update(true); }
       });
       des.appendChild(this.startBtn);
       const autos = h('div.row', { style: { marginTop: '8px', flexWrap: 'wrap' } });
@@ -377,6 +386,13 @@
       const maxD = Math.max(6.01, Math.log10(Math.max(1e6, S.tokens)));
       this.dIn.max = maxD.toFixed(2);
       if (cfg.D > S.tokens) cfg.D = S.tokens;
+      // auto-size: the sliders follow the best run you can do right now
+      const plan = G.Sim.plannedRun();
+      if (cfg.auto > 0 && !S.training) { cfg.N = plan.N; cfg.D = plan.D; }
+      for (const b of this.autoBtns) b.classList.toggle('on', cfg.auto === b._eta);
+      U.setHTML(this.modeLine, cfg.auto > 0
+        ? `<span style="color:var(--green)">AUTO-SIZE</span> · best ~${U.fmtTime(cfg.auto)} run with everything you have — re-sized as you grow`
+        : `<span style="color:var(--yellow)">MANUAL</span> · your sliders · press a timed preset (⚡ 15s…) to auto-size again`);
       if (force || document.activeElement !== this.nIn) this.nIn.value = Math.log10(cfg.N);
       if (force || document.activeElement !== this.dIn) this.dIn.value = Math.log10(Math.max(1e6, cfg.D));
       U.setText(this.nLbl, U.fmtParams(cfg.N));
@@ -388,7 +404,7 @@
         this.rlBox.appendChild(toggle(`RL POST-TRAINING (+50% compute, +${D.M.rlBonus} cap)`, () => cfg.rl, (v) => { cfg.rl = v; this.update(true); }, 'Reinforcement learning on chains of thought after pretraining. Accuracy grows with train-time RL compute.'));
       }
       if (!hasRL) cfg.rl = false;
-      const p = G.Sim.predict(cfg.N, Math.min(cfg.D, S.tokens), cfg.rl);
+      const p = G.Sim.predict(plan.N, plan.D, plan.rl);
       const v = this.pred._v;
       U.setText(v.flop, U.fmtFlop(p.flop));
       U.setText(v.eta, U.fmtTime(p.eta));
@@ -400,9 +416,19 @@
       const delta = p.cap - cur;
       U.setText(v.delta, (delta >= 0 ? '+' : '') + delta.toFixed(1));
       v.delta.style.color = delta > 0 ? 'var(--green)' : 'var(--red)';
-      U.setText(v.serve, U.fmtFlops((cfg.N * D.M.activeFrac * D.effortServe) / (G.BAL.SERVE_K * D.M.serveEff)));
-      this.startBtn.textContent = S.training ? 'CANCEL RUN' : 'START TRAINING';
-      this.startBtn.className = 'bigbtn' + (S.training ? ' red' : '');
+      U.setText(v.serve, U.fmtFlops((plan.N * D.M.activeFrac * D.effortServe) / (G.BAL.SERVE_K * D.M.serveEff)));
+      // what START gets you, or why it can't beat the live model and what to do about it
+      const out = G.Sim.trainOutlook(plan);
+      let hint = '', hintCls = '';
+      if (S.training) hint = '';
+      else if (!out.blocker) { hint = D.model ? `▲ This run beats your live model: <b>+${out.gain.toFixed(1)} capability</b>. It deploys automatically when done.` : '▲ Train your first model!'; hintCls = 'good'; }
+      else if (out.blocker === 'data') { hint = `⚠ <b>No better model possible yet</b> — this run already uses all <b>${U.fmt(S.tokens)}</b> tokens you own. Buy data in the <b>DATA</b> tab: more data → a bigger, smarter model.`; hintCls = 'bad'; }
+      else if (out.blocker === 'compute') { hint = `⚠ <b>No better model possible in ~${U.fmtTime(cfg.auto)}</b>. Buy GPUs in the <b>COMPUTE</b> tab, or pick a longer run (1 MIN / 5 MIN).`; hintCls = 'bad'; }
+      else { hint = '⚠ <b>This run won\'t beat your live model</b>. Make it bigger, or press <b>⚡ 15s</b> to auto-size the best quick run.'; hintCls = 'bad'; }
+      U.setHTML(this.hint, hint);
+      this.hint.className = 'trainhint ' + hintCls;
+      this.startBtn.textContent = S.training ? 'CANCEL RUN' : out.blocker ? 'START TRAINING (NO GAIN)' : 'START TRAINING';
+      this.startBtn.className = 'bigbtn' + (S.training ? ' red' : out.blocker ? ' alt' : '');
       // live
       P().drawLossChart(this.bigLoss, S.training, true);
       if (S.training) {
