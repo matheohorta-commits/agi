@@ -65,7 +65,7 @@ export class ModelBuilder {
   section(name, opts = {}) {
     const s = { name, idx: this.sections.length, bag: opts.bag ?? this.cur?.bag ?? 1, view: opts.view ?? this.cur?.view ?? 'front',
       level: opts.level ?? this.cur?.level ?? 'base', maxStep: opts.maxStep ?? 12, sub: opts.sub ?? null, note: opts.note ?? null,
-      order: opts.order ?? 'layer' };
+      order: opts.order ?? 'layer', module: opts.module ?? this.cur?.module ?? 'A', settle: opts.settle ?? false };
     this.sections.push(s);
     this.cur = s;
     return s;
@@ -182,8 +182,25 @@ export class ModelBuilder {
         }
       }
     }
-    // cells with only partial height free -> plates
-    for (const [x, z] of partial) for (let j = 0; j < 3; j++) if (this.isFreeCell(x, y + j, z)) this.add('3024', colAt(x, y, z), x, y + j, z, 0);
+    // cells with only part of the course free -> runs of plates, one plate level at a time
+    for (let j = 0; j < 3; j++) {
+      const lvl = partial.filter(([x, z]) => this.isFreeCell(x, y + j, z));
+      if (!lvl.length) continue;
+      const set = new Set(lvl.map(([x, z]) => x + ',' + z));
+      const done = new Set();
+      const sorted = lvl.slice().sort((a, b) => (a[1] - b[1]) || (a[0] - b[0]));
+      for (const [x, z] of sorted) {
+        if (done.has(x + ',' + z)) continue;
+        const col = colAt(x, y, z);
+        let n = 0;
+        while (set.has((x + n) + ',' + z) && !done.has((x + n) + ',' + z) && colAt(x + n, y, z) === col) n++;
+        let m = 0;
+        while (set.has(x + ',' + (z + m)) && !done.has(x + ',' + (z + m)) && colAt(x, y, z + m) === col) m++;
+        const [axis, len] = n >= m ? ['x', n] : ['z', m];
+        this.line(x, y + j, z, len, axis, col);
+        for (let i = 0; i < len; i++) done.add(axis === 'x' ? (x + i) + ',' + z : x + ',' + (z + i));
+      }
+    }
   }
 
   _fillRun(run, y, color, lengths, texture, opts) {
@@ -289,6 +306,47 @@ export class ModelBuilder {
     }
   }
 
+  // A tying layer: cover the free cells of `mask` at height y so that the parts of the layer below end
+  // up joined together (Kruskal-like: repeatedly place the plate that joins the most still-separate
+  // groups below), then fill the rest with the biggest plates. Makes a two-layer floor hold together.
+  bond(mask, y, color, opts = {}) {
+    const list = (opts.sizes ?? PLATES).filter(([W, D]) => W * D <= (opts.maxArea ?? 48));
+    const cells = Array.isArray(mask) ? mask : rectCells(mask);
+    const want = new Set();
+    for (const [x, z] of cells) if (this.isFreeCell(x, y, z)) want.add(x + ',' + z);
+    const has = (x, z) => want.has(x + ',' + z);
+    const colorFn = typeof color === 'function' ? color : () => color;
+    const par = new Map();
+    const find = (a) => { let r = a; while (par.has(r)) r = par.get(r); return r; };
+    for (let iter = 0; iter < 400; iter++) {
+      let best = null, bestScore = 0;
+      for (const k of want) {
+        const [x, z] = k.split(',').map(Number);
+        for (const [W, D, id] of list) {
+          for (const [w, d, r] of (W === D ? [[W, D, 0]] : [[W, D, 0], [D, W, 1]])) {
+            let ok = true;
+            const roots = new Set();
+            for (let i = 0; i < w && ok; i++) for (let kk = 0; kk < d; kk++) {
+              if (!has(x + i, z + kk)) { ok = false; break; }
+              const b = this.occAt(x + i, y - 1, z + kk);
+              if (b !== undefined) roots.add(find(b));
+            }
+            if (!ok || roots.size < 2) continue;
+            const score = roots.size * 1000 + W * D;
+            if (score > bestScore && avail(id, colorFn(x, z, w, d))) { bestScore = score; best = { x, z, w, d, r, id, roots }; }
+          }
+        }
+      }
+      if (!best) break;
+      const { x, z, w, d, r, id, roots } = best;
+      this.add(id, colorFn(x, z, w, d), x, y, z, r);
+      for (let i = 0; i < w; i++) for (let k = 0; k < d; k++) want.delete((x + i) + ',' + (z + k));
+      const [first, ...rest] = [...roots];
+      for (const o of rest) par.set(o, first);
+    }
+    this.fill([...want].map((k) => k.split(',').map(Number)), y, color, {});
+  }
+
   // Plates of a slab that rest on nothing get a small plate on top that ties them to a neighbour
   lockLayer(y, color, from = 0) {
     for (let i = from; i < this.parts.length; i++) {
@@ -327,6 +385,97 @@ export class ModelBuilder {
       this.add(table[L], color, cx, y, cz, axis === 'x' ? 0 : 1);
       i += L;
     }
+  }
+
+  // ------------------------------------------------------------------ modular floors
+  // Tile the top of a floor's walls (one plate thick), leaving a few 1x1 plates as locator studs:
+  // the next floor module rests on the tiles and only clicks onto the locators, so it lifts off.
+  capWalls(mask, y, color, isLocator) {
+    const free = new Set(mask.filter(([x, z]) => this.isFreeCell(x, y, z)).map(([x, z]) => x + ',' + z));
+    const has = (x, z) => free.has(x + ',' + z);
+    const runs = [];
+    for (const axis of ['x', 'z', 'x']) {
+      const list = [...free].map((k) => k.split(',').map(Number)).sort((a, b) => (axis === 'x' ? (a[1] - b[1]) || (a[0] - b[0]) : (a[0] - b[0]) || (a[1] - b[1])));
+      for (const [x, z] of list) {
+        if (!has(x, z)) continue;
+        if (axis === 'x' ? has(x - 1, z) : has(x, z - 1)) continue;
+        const run = [];
+        let cx = x, cz = z;
+        while (has(cx, cz)) { run.push([cx, cz]); if (axis === 'x') cx++; else cz++; }
+        if (run.length < 2 && runs.length && axis === 'z') continue;
+        runs.push({ axis, run });
+        run.forEach(([a, b]) => free.delete(a + ',' + b));
+      }
+    }
+    const sizes = [8, 6, 4, 3, 2, 1];
+    for (const { axis, run } of runs) {
+      let seg = [];
+      const flush = () => {
+        let i = 0;
+        while (i < seg.length) {
+          const L = sizes.find((n) => n <= seg.length - i && avail(TILE_1[n], color));
+          const [x, z] = seg[i];
+          this.add(TILE_1[L], color, x, y, z, axis === 'x' ? 0 : 1);
+          i += L;
+        }
+        seg = [];
+      };
+      run.forEach(([x, z], i) => {
+        if (isLocator(x, z, i, run.length)) { flush(); this.add('3024', color, x, y, z, 0); }
+        else seg.push([x, z]);
+      });
+      flush();
+    }
+  }
+
+  // Floorboards: rows of 1-wide tiles with staggered joints (a wooden floor made of many tiles)
+  boards(mask, y, color, axis = 'x', opts = {}) {
+    const free = new Set(mask.filter(([x, z]) => this.isFreeCell(x, y, z)).map(([x, z]) => x + ',' + z));
+    const lengths = (opts.lengths ?? [4, 3, 2, 1]);
+    const colorFn = typeof color === 'function' ? color : () => color;
+    const rows = new Map();
+    for (const k of free) { const [x, z] = k.split(',').map(Number); const r = axis === 'x' ? z : x; if (!rows.has(r)) rows.set(r, []); rows.get(r).push(axis === 'x' ? x : z); }
+    for (const [r, list] of rows) {
+      list.sort((a, b) => a - b);
+      let i = 0;
+      while (i < list.length) {
+        let j = i; while (j + 1 < list.length && list[j + 1] === list[j] + 1) j++;
+        // run list[i..j]; first board shortened by the row offset so joints stagger
+        let a = list[i];
+        const end = list[j] + 1;
+        const off = ((r % 3) + 3) % 3;
+        let first = true;
+        while (a < end) {
+          let L = lengths.find((n) => n <= end - a && (!first || !off || n <= off + 1)) ?? 1;
+          if (first && off && L > off) L = off;
+          first = false;
+          const col = colorFn(axis === 'x' ? a : r, axis === 'x' ? r : a);
+          const L2 = [L, 3, 2, 1].find((n) => n <= end - a && avail(TILE_1[n], col));
+          if (axis === 'x') this.add(TILE_1[L2], col, a, y, r, 0); else this.add(TILE_1[L2], col, r, y, a, 1);
+          a += L2;
+        }
+        i = j + 1;
+      }
+    }
+  }
+
+  // A tile or plate standing upright against a wall (SNOT), hooked on a brick with a side stud.
+  // (x, z): the room cell in front of the wall at the left end of the part, facing r (into the room)
+  upright(id, color, x, y, z, r, host, yOff = 0) {
+    const p = part(id);
+    const hPl = Math.ceil(p.d * 2.5);
+    const along = (r & 1) ? [0, 1] : [1, 0];
+    const cells = [];
+    for (let i = 0; i < p.w; i++) cells.push([x + along[0] * i, z + along[1] * i]);
+    for (const [cx, cz] of cells) for (let j = 0; j < hPl; j++) if (!this.isFreeCell(cx, y + j, cz)) {
+      this.errors.push(`upright ${id} blocked at ${cx},${y + j},${cz} [${this.cur?.name}]`);
+      return -1;
+    }
+    const idx = this.parts.length;
+    const minx = Math.min(...cells.map((c) => c[0])), minz = Math.min(...cells.map((c) => c[1]));
+    this.parts.push({ id, c: color, x: minx, y, z: minz, r: r & 3, sec: this.cur.idx, up: { h: hPl, yOff }, attach: host });
+    for (const [cx, cz] of cells) for (let j = 0; j < hPl; j++) this.occ.set(KEY(cx, y + j, cz), idx);
+    return idx;
   }
 
   // highest stud-top at (x,z) that is <= y (or -1)

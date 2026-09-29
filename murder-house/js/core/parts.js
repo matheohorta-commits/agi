@@ -138,6 +138,12 @@ acc('6126b', 1, 1, 3, 'Wave / Flame Rounded with Base Rim', { t: 'flame2' }, 0.1
 acc('298c02', 1, 2, 2, 'Lever Small Base with Black Lever', { t: 'lever' }, 0.08);
 acc('90398', 1, 1, 5, 'Minifig Trophy Statuette', { t: 'statuette' }, 0.20);
 acc('24093', 2, 1, 1, 'Book Cover', { t: 'book' }, 0.15);
+acc('37776', 1, 1, 3, 'Equipment Lantern', { t: 'lantern' }, 0.15);
+acc('30103', 1, 1, 2, 'Animal, Bat', { t: 'bat' }, 0.20);
+acc('90981', 1, 1, 1, 'Insect Accessory, Spider Web, Hanging', { t: 'web' }, 0.20);
+acc('2343', 1, 1, 2, 'Equipment Goblet / Glass', { t: 'goblet' }, 0.08);
+acc('34172', 1, 1, 1, 'Equipment Dish / Bowl', { t: 'bowl' }, 0.08);
+acc('64644', 1, 1, 5, 'Equipment Telescope / Support 1 x 1 x 1 2/3', { t: 'pole' }, 0.05, { top: 'all' });
 
 // ---------------------------------------------------------------- minifigure parts (only used inside a fig)
 const fig = (id, name, geo, cost) => def(id, { name, cat: 'Minifig', w: 1, d: 1, h: 3, geo, cost, figPart: true });

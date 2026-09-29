@@ -1,7 +1,7 @@
 // Small builds (furniture, props, minifigures). Every build uses a Local frame whose front faces +z
 // when r = 0; lz = 0 is the back (against a wall).
 import { Local } from './common.js';
-import { PLATES, TILES } from '../core/builder.js';
+import { PLATES, TILES, avail } from '../core/builder.js';
 import { torsoId, legsId } from '../core/parts.js';
 
 export function plateFor(w, d, tiles = false) {
@@ -12,8 +12,15 @@ export function plateFor(w, d, tiles = false) {
   }
   throw new Error(`no ${tiles ? 'tile' : 'plate'} ${w}x${d}`);
 }
-const P = (L, w, d, color, lx, ly, lz) => { const [id, r] = plateFor(w, d); return L.add(id, color, lx, ly, lz, r); };
-const T = (L, w, d, color, lx, ly, lz) => { const [id, r] = plateFor(w, d, true); return L.add(id, color, lx, ly, lz, r); };
+// plate/tile of any size: one piece when it exists, else split along the long side
+function has(w, d, tiles) { try { plateFor(w, d, tiles); return true; } catch { return false; } }
+function PT(L, w, d, color, lx, ly, lz, tiles) {
+  if (has(w, d, tiles)) { const [id, r] = plateFor(w, d, tiles); return L.add(id, color, lx, ly, lz, r); }
+  if (w >= d) { let a = Math.min(w - 1, 8); while (a > 1 && !(has(a, d, tiles))) a--; PT(L, a, d, color, lx, ly, lz, tiles); return PT(L, w - a, d, color, lx + a, ly, lz, tiles); }
+  let b = Math.min(d - 1, 8); while (b > 1 && !(has(w, b, tiles))) b--; PT(L, w, b, color, lx, ly, lz, tiles); return PT(L, w, d - b, color, lx, ly, lz + b, tiles);
+}
+const P = (L, w, d, color, lx, ly, lz) => PT(L, w, d, color, lx, ly, lz, false);
+const T = (L, w, d, color, lx, ly, lz) => PT(L, w, d, color, lx, ly, lz, true);
 
 export function sofa(mb, x, y, z, r, col = 'darkRed', cushion = 'tan') {
   const L = new Local(mb, x, y, z, 4, 2, r);
@@ -226,6 +233,156 @@ export function tree(mb, x, y, z, height = 5, leafCol = 'darkGreen', alt = 'gree
   tier(top + 4, false);
   mb.add('3022', 'reddishBrown', x, top + 5, z);
   mb.add('2417', alt, x, top + 6, z); mb.add('2417', leafCol, x + 1, top + 6, z + 1);
+}
+
+
+// ---------------------------------------------------------------- more furniture (v2)
+const BOOKS = ['darkRed', 'darkTan', 'black', 'sandGreen', 'tan', 'darkBrown', 'medNougat', 'darkBlue', 'darkGreen', 'dbg', 'reddishBrown', 'red'];
+let bookSeed = 7;
+const rnd = () => ((bookSeed = (bookSeed * 16807) % 2147483647) / 2147483647);
+
+// brick-built bookcase, 1 stud deep: plate shelves with rows of 1x1 "books"
+export function bookshelf(mb, x, y, z, r, W = 4, shelves = 3, wood = 'reddishBrown') {
+  const L = new Local(mb, x, y, z, W, 1, r);
+  const books = BOOKS.filter((c) => avail('3005', c));
+  let ly = 0;
+  for (let s = 0; s < shelves; s++) {
+    P(L, W, 1, wood, 0, ly, 0);
+    ly += 1;
+    L.add('3005', wood, 0, ly, 0); L.add('3005', wood, W - 1, ly, 0);
+    for (let a = 1; a < W - 1; a++) {
+      if (rnd() < 0.15) L.add('3062b', ['pearlGold', 'white', 'transGreen'][Math.floor(rnd() * 3)], a, ly, 0);
+      else L.add('3005', books[Math.floor(rnd() * books.length)], a, ly, 0);
+    }
+    ly += 3;
+  }
+  P(L, W, 1, wood, 0, ly, 0);
+  tileArea(L, 0, ly + 1, 0, W, 1, wood);
+}
+
+export function piano(mb, x, y, z, r) {
+  // upright piano W=4, D=2 (keys at the front)
+  const L = new Local(mb, x, y, z, 4, 2, r);
+  L.add('3010', 'black', 0, 0, 0); L.add('3010', 'black', 0, 3, 0); L.add('3010', 'black', 0, 6, 0);
+  L.add('3005', 'black', 0, 0, 1); L.add('3005', 'black', 3, 0, 1);
+  P(L, 4, 1, 'black', 0, 3, 1);
+  T(L, 4, 1, 'white', 0, 4, 1);
+  P(L, 4, 1, 'black', 0, 9, 0);
+  L.add('37762', 'pearlGold', 0, 10, 0); L.add('37762', 'pearlGold', 3, 10, 0);
+  T(L, 2, 1, 'black', 1, 10, 0);
+}
+
+export function floorLamp(mb, x, y, z, shade = 'darkRed') {
+  mb.add('3062b', 'black', x, y, z); mb.add('3062b', 'black', x, y + 3, z); mb.add('3062b', 'black', x, y + 6, z);
+  mb.add('3062b', 'transYellow', x, y + 9, z); mb.add('59900', shade, x, y + 12, z);
+}
+
+export function tableLamp(mb, x, y, z, shade = 'darkGreen') {
+  mb.add('3062b', 'pearlGold', x, y, z); mb.add('3062b', 'transYellow', x, y + 3, z); mb.add('59900', shade, x, y + 6, z);
+}
+
+export function wardrobe(mb, x, y, z, r, col = 'reddishBrown', front = 'medNougat', levels = 3) {
+  const L = new Local(mb, x, y, z, 3, 2, r);
+  for (let i = 0; i < levels; i++) { L.add('92410', col, 0, 6 * i, 0); L.add('4536', front, 0, 6 * i, 1); L.add('4536', front, 0, 6 * i + 3, 1); }
+  T(L, 3, 2, col, 0, 6 * levels, 0);
+}
+
+export function dresser(mb, x, y, z, r, col = 'reddishBrown', front = 'medNougat') {
+  const L = new Local(mb, x, y, z, 3, 2, r);
+  L.add('92410', col, 0, 0, 0); L.add('4536', front, 0, 0, 1); L.add('4536', front, 0, 3, 1);
+  P(L, 3, 2, col, 0, 6, 0);
+  L.add('37762', 'pearlGold', 0, 7, 0); L.add('3899', 'white', 2, 7, 1);
+  T(L, 2, 1, col, 1, 7, 0); L.add('3070b', col, 0, 7, 1); L.add('3070b', col, 1, 7, 1);
+}
+
+export function coffeeTable(mb, x, y, z, r, col = 'reddishBrown') {
+  const L = new Local(mb, x, y, z, 4, 2, r);
+  L.add('3062b', col, 0, 0, 0); L.add('3062b', col, 3, 0, 1);
+  L.add('3062b', col, 3, 0, 0); L.add('3062b', col, 0, 0, 1);
+  P(L, 4, 2, col, 0, 3, 0);
+  L.add('3899', 'white', 0, 4, 0); L.add('2343', 'transClear', 3, 4, 1);
+  T(L, 2, 2, 'darkGreen', 1, 4, 0); L.add('3070b', col, 0, 4, 1); L.add('3070b', col, 3, 4, 0);
+}
+
+export function rug(mb, x0, z0, x1, z1, y, inner = 'darkRed', border = 'darkTan') {
+  // a rug made of tiles: border ring + inner field
+  const cells = [];
+  for (let x = x0; x < x1; x++) for (let z = z0; z < z1; z++) cells.push([x, z]);
+  const ring = cells.filter(([x, z]) => x === x0 || x === x1 - 1 || z === z0 || z === z1 - 1);
+  const field = cells.filter(([x, z]) => !(x === x0 || x === x1 - 1 || z === z0 || z === z1 - 1));
+  mb.fill(field, y, inner, { tiles: true });
+  mb.fill(ring, y, border, { tiles: true, sizes: [[4, 1, '2431'], [3, 1, '63864'], [2, 1, '3069b'], [1, 1, '3070b']] });
+}
+
+export function recordPlayer(mb, x, y, z) {
+  mb.add('3003', 'reddishBrown', x, y, z);
+  mb.add('3022', 'black', x, y + 3, z);
+  mb.add('14769', 'black', x, y + 4, z);
+}
+
+export function rockingHorse(mb, x, y, z, r) {
+  // 1 x 3: rockers (plate), legs, body and a head
+  const L = new Local(mb, x, y, z, 1, 3, r);
+  P(L, 1, 3, 'reddishBrown', 0, 0, 0);
+  L.add('3062b', 'white', 0, 1, 0); L.add('3062b', 'white', 0, 1, 2);
+  P(L, 1, 3, 'white', 0, 4, 0);
+  L.add('3005', 'white', 0, 5, 2); L.add('54200', 'black', 0, 8, 2, 0);
+  L.add('3070b', 'red', 0, 5, 1); L.add('54200', 'black', 0, 5, 0, 2);
+}
+
+export function toyBlocks(mb, x, y, z) {
+  mb.add('3005', 'red', x, y, z); mb.add('3005', 'yellow', x, y + 3, z); mb.add('3005', 'blue', x + 1, y, z);
+}
+
+export function gurney(mb, x, y, z, r) {
+  const L = new Local(mb, x, y, z, 2, 5, r);
+  for (const [a, b] of [[0, 0], [1, 0], [0, 4], [1, 4]]) L.add('3062b', 'lbg', a, 0, b);
+  P(L, 2, 4, 'lbg', 0, 3, 0); P(L, 2, 1, 'lbg', 0, 3, 4);
+  T(L, 2, 4, 'white', 0, 4, 0); T(L, 2, 1, 'white', 0, 4, 4);
+}
+
+export function labBench(mb, x, y, z, r) {
+  // bench with bottles, a lantern and candles (W 4, D 2)
+  const L = new Local(mb, x, y, z, 4, 2, r);
+  L.add('3010', 'darkBrown', 0, 0, 0); L.add('3005', 'darkBrown', 0, 0, 1); L.add('3005', 'darkBrown', 3, 0, 1);
+  P(L, 4, 2, 'darkBrown', 0, 3, 0);
+  L.add('95228', 'transGreen', 0, 4, 0); L.add('95228', 'transClear', 1, 4, 0); L.add('37776', 'black', 3, 4, 0);
+  L.add('37762', 'white', 2, 4, 1); L.add('34172', 'white', 0, 4, 1);
+  L.add('3070b', 'darkBrown', 2, 4, 0); L.add('3070b', 'darkBrown', 1, 4, 1); L.add('3070b', 'darkBrown', 3, 4, 1);
+}
+
+export function sideboard(mb, x, y, z, r, col = 'reddishBrown') {
+  const L = new Local(mb, x, y, z, 3, 2, r);
+  L.add('92410', col, 0, 0, 0); L.add('4533', 'transLightBlue', 0, 0, 1);
+  P(L, 3, 2, col, 0, 6, 0);
+  L.add('2343', 'transClear', 0, 7, 1); L.add('2343', 'transClear', 1, 7, 1); L.add('37762', 'pearlGold', 2, 7, 0);
+  T(L, 2, 1, col, 0, 7, 0); L.add('3070b', col, 2, 7, 1);
+}
+
+export function pottedPlant(mb, x, y, z, big = false) {
+  if (big) { mb.add('3941', 'reddishBrown', x, y, z); mb.add('2417', 'green', x, y + 3, z); mb.add('2423', 'green', x + 1, y + 3, z + 1); }
+  else { mb.add('3062b', 'darkOrange', x, y, z); mb.add('2423', 'green', x, y + 3, z); }
+}
+
+export function dressForm(mb, x, y, z) {
+  mb.add('3062b', 'black', x, y, z); mb.add('3062b', 'black', x, y + 3, z); mb.add('3062b', 'white', x, y + 6, z); mb.add('3062b', 'white', x, y + 9, z); mb.add('98138', 'black', x, y + 12, z);
+}
+
+export function trunk(mb, x, y, z, r, col = 'darkBrown') {
+  const L = new Local(mb, x, y, z, 4, 2, r);
+  L.add('3001', col, 0, 0, 0);
+  T(L, 4, 2, 'reddishBrown', 0, 3, 0);
+}
+
+export function bench(mb, x, y, z, r, col = 'reddishBrown') {
+  const L = new Local(mb, x, y, z, 4, 1, r);
+  L.add('3005', 'black', 0, 0, 0); L.add('3005', 'black', 3, 0, 0);
+  P(L, 4, 1, col, 0, 3, 0);
+  T(L, 4, 1, col, 0, 4, 0);
+}
+
+export function mailbox(mb, x, y, z) {
+  mb.add('3062b', 'black', x, y, z); mb.add('3062b', 'black', x, y + 3, z); mb.add('3005', 'black', x, y + 6, z); mb.add('54200', 'black', x, y + 9, z, 0);
 }
 
 // ---------------------------------------------------------------- minifigures

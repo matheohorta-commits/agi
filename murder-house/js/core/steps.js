@@ -2,6 +2,7 @@
 // sections are kept in build order; inside a section parts are ordered bottom-up and split into
 // steps of a handful of parts, grouped spatially so each step touches one area of the model.
 import { part, dims } from './parts.js';
+import { buildEdges } from './connect.js';
 
 export function makeSteps(mb) {
   const steps = [];
@@ -42,6 +43,8 @@ export function makeSteps(mb) {
     }
     flush();
   }
+  settle(mb, steps);
+  for (let k = steps.length - 1; k >= 0; k--) if (!steps[k].parts.length) steps.splice(k, 1);
   steps.forEach((s, n) => {
     s.n = n + 1;
     // callout: lots used in this step
@@ -54,4 +57,35 @@ export function makeSteps(mb) {
     s.lots = [...lots.entries()].map(([k, n]) => { const [id, c, fig] = k.split('|'); return { id, c, n, fig }; });
   });
   return steps;
+}
+
+// Never leave a part hanging in mid-air at the end of a step: a part that is not yet held by what has
+// been built so far moves on to the first later step where it is (e.g. a floor plate that only gets
+// locked in by the wall standing on it).
+function settle(mb, steps) {
+  const P = mb.parts;
+  const { edges } = buildEdges(mb);
+  const placed = new Uint8Array(P.length);
+  let carry = [];
+  for (let si = 0; si < steps.length; si++) {
+    const s = steps[si];
+    const cand = [...carry, ...s.parts];
+    const inCand = new Set(cand);
+    const ok = new Set();
+    const queue = [];
+    for (const i of cand) {
+      if (P[i].y === 0 || P[i].loose || P[i].id === 'fig' || edges[i].some((j) => placed[j])) { ok.add(i); queue.push(i); }
+    }
+    while (queue.length) {
+      const a = queue.pop();
+      for (const b of edges[a]) if (inCand.has(b) && !ok.has(b)) { ok.add(b); queue.push(b); }
+    }
+    const keep = [], next = [];
+    for (const i of cand) (ok.has(i) ? keep : next).push(i);
+    // keep the step's own order, carried parts first
+    s.parts = keep;
+    for (const i of keep) placed[i] = 1;
+    carry = next;
+  }
+  if (carry.length) steps[steps.length - 1].parts.push(...carry);
 }

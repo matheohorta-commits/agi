@@ -5,13 +5,13 @@ import { disk, ringOf } from '../core/builder.js';
 // ---- vertical levels (in plates, 1 brick = 3)
 export const Y = {
   base: 0,        // 16x16 base plates: y 0..1
-  bsmt: 1,        // basement walls start (5 courses -> 16)
-  gSlab: 16,      // ground floor slab (plate) 16..17
-  gWall: 17,      // ground floor walls 17..38 (7 courses)
-  uSlab: 38,      // upper floor slab 38..39
-  uWall: 39,      // upper floor walls 39..57 (6 courses)
-  aSlab: 57,      // attic slab 57..58
-  eave: 58,       // roofs start
+  bsmt: 1,        // module A: basement walls 1..16 (5 courses), tile cap 16..17
+  gSlab: 17,      // module B: ground floor slab 17..18
+  gWall: 18,      //           floor tiles 18..19, walls 18..39 (7 courses), cap 39..40
+  uSlab: 40,      // module C: upper slab 40..41
+  uWall: 41,      //           walls 41..59 (6 courses), cap 59..60
+  aSlab: 60,      // module D: attic slab, two plate layers 60..62
+  eave: 62,       //           roofs start
   terrace: 7,     // front terrace lawn plates 7..8
 };
 
@@ -56,6 +56,7 @@ export function outline() {
   for (let z = HZF; z <= WC.zf; z++) add(WC.x0, z);                 // wing C return
   for (let x = WC.x0; x < WC.x1; x++) add(x, WC.zf);                // wing C front
   for (let z = HZ0; z <= WC.zf; z++) add(WC.x1 - 1, z);             // right wall
+  for (let x = HX0; x < HX1; x++) add(x, HZ0);                      // back wall
   return cells;
 }
 
