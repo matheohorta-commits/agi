@@ -248,30 +248,10 @@ export function buildHouse() {
   });
 
   // ------------------------------------------------------------- ground floor rooms
-  mb.section('Floors: parquet, rugs & kitchen tiles', { bag: 4, level: 'ground', view: 'back', maxStep: 14 });
+  // The floor section comes first in the booklet, but its tiles are laid after the furniture has
+  // been placed in code, so the tiles fill right up to every piece of furniture.
+  const floorsG = mb.section('Floors: parquet, rugs & kitchen tiles', { bag: 4, level: 'ground', view: 'back', maxStep: 14 });
   const gFloor = Y.gWall;       // tiles sit on the slab at y = 17
-  const keep = [];              // stud spots for furniture / figures
-  const K = (x0, z0, x1, z1) => keep.push(...rectCells({ x0, z0, x1, z1 }));
-  // living room
-  K(7, 18, 9, 22); K(11, 18, 13, 22); K(9, 14, 11, 16); K(9, 24, 11, 26); K(11, 25, 13, 26); K(13, 13, 15, 16);
-  // foyer
-  K(24, 25, 26, 27);
-  // office
-  K(35, 21, 39, 25); K(39, 25, 41, 28); K(33, 25, 35, 29); K(36, 27, 38, 28);
-  // dining
-  K(20, 12, 28, 19);
-  // kitchen
-  K(39, 11, 41, 18); K(33, 11, 35, 13); K(35, 14, 37, 15);
-  mb.reserve(keep, gFloor, gFloor + 1);
-  const room = (x0, z0, x1, z1, col) => mb.fill(rectCells({ x0, z0, x1, z1 }).filter(([x, z]) => !stairSet.has(key(x, z))), gFloor, col, { tiles: true });
-  room(9, 20, 13, 24, 'darkRed');                              // rug by the fireplace
-  room(7, 10, 16, 31, 'reddishBrown');                         // living room
-  room(17, 20, 31, 29, 'reddishBrown');                        // foyer & vestibule
-  mb.fill(turretInside.filter(([x, z]) => !stairSet.has(key(x, z))), gFloor, 'reddishBrown', { tiles: true });
-  room(17, 10, 31, 19, 'medNougat');                           // dining room
-  room(32, 20, 41, 30, 'darkTan');                             // Ben's office
-  mb.fill(rectCells({ x0: 32, z0: 10, x1: 41, z1: 19 }), gFloor, (x, z) => (((x >> 1) + (z >> 1)) % 2 ? 'black' : 'white'), { tiles: true, sizes: [[2, 2, '3068b'], [2, 1, '3069b'], [1, 1, '3070b']] });
-  mb.unreserve(keep, gFloor, gFloor + 1);
 
   mb.section('Living room & fireplace', { bag: 4, level: 'ground', view: 'back', maxStep: 10 });
   F.fireplace(mb, 7, gFloor, 18, 1);
@@ -298,6 +278,21 @@ export function buildHouse() {
   mb.section('Kitchen', { bag: 4, level: 'ground', view: 'back' });
   F.counter(mb, 39, gFloor, 11, 3, 7, { layout: { 0: 'cab', 3: 'stove', 5: 'sink' } });
   F.fridge(mb, 33, gFloor, 11, 0);
+  const lastG = mb.cur;
+
+  mb.use(floorsG);
+  const figSpotsG = [[11, 25], [12, 25], [36, 27], [37, 27], [35, 14], [36, 14]];
+  mb.reserve(figSpotsG, gFloor, gFloor + 1);
+  const room = (x0, z0, x1, z1, col) => mb.fill(rectCells({ x0, z0, x1, z1 }).filter(([x, z]) => !stairSet.has(key(x, z))), gFloor, col, { tiles: true });
+  room(9, 20, 13, 24, 'darkRed');                              // rug by the fireplace
+  room(7, 10, 16, 31, 'reddishBrown');                         // living room
+  room(17, 20, 31, 29, 'reddishBrown');                        // foyer & vestibule
+  mb.fill(turretInside.filter(([x, z]) => !stairSet.has(key(x, z))), gFloor, 'reddishBrown', { tiles: true });
+  room(17, 10, 31, 19, 'medNougat');                           // dining room
+  room(32, 20, 41, 30, 'darkTan');                             // Ben's office
+  mb.fill(rectCells({ x0: 32, z0: 10, x1: 41, z1: 19 }), gFloor, (x, z) => (((x >> 1) + (z >> 1)) % 2 ? 'black' : 'white'), { tiles: true, sizes: [[2, 2, '3068b'], [2, 1, '3069b'], [1, 1, '3070b']] });
+  mb.unreserve(figSpotsG, gFloor, gFloor + 1);
+  mb.use(lastG);
 
   // ============================================================= BAG 5: upper floor
   mb.section('Upper floor slab & balcony', { bag: 5, level: 'upper', view: 'top', maxStep: 10 });
@@ -342,25 +337,8 @@ export function buildHouse() {
   mb.fill(rectCells({ x0: 27, z0: 30, x1: 31, z1: 33 }), Y.uWall, C.trim, { tiles: true });
 
   // ============================================================= BAG 6: upper rooms
-  mb.section('Upper floors & railing', { bag: 6, level: 'upper', view: 'back', maxStep: 14 });
+  const floorsU = mb.section('Upper floors & railing', { bag: 6, level: 'upper', view: 'back', maxStep: 14 });
   const uFloor = Y.uWall;
-  const keep2 = [];
-  const K2 = (x0, z0, x1, z1) => keep2.push(...rectCells({ x0, z0, x1, z1 }));
-  K2(7, 16, 13, 20); K2(7, 14, 9, 16); K2(7, 20, 9, 22);                              // master bedroom
-  K2(35, 26, 41, 28); K2(33, 21, 37, 25); K2(37, 22, 39, 23);                          // Violet
-  K2(26, 20, 29, 22); K2(27, 24, 29, 25); K2(29, 26, 31, 28);                          // study
-  K2(18, 12, 22, 15); K2(23, 12, 25, 14); K2(27, 12, 31, 15);                          // nursery
-  K2(37, 11, 41, 14); K2(33, 11, 34, 13); K2(35, 11, 36, 12);                          // bathroom
-  K2(18, 28, 22, 29);                                                                  // railing
-  mb.reserve(keep2, uFloor, uFloor + 1);
-  const uroom = (x0, z0, x1, z1, col) => mb.fill(rectCells({ x0, z0, x1, z1 }), uFloor, col, { tiles: true });
-  uroom(7, 10, 16, 32, 'darkRed');                       // master bedroom carpet
-  uroom(17, 20, 25, 29, 'reddishBrown');                 // hall
-  uroom(26, 20, 31, 29, 'medNougat');                    // study
-  uroom(17, 10, 31, 19, 'sandGreen');                    // nursery
-  uroom(32, 20, 41, 30, 'darkBlue');                     // Violet's room
-  mb.fill(rectCells({ x0: 32, z0: 10, x1: 41, z1: 19 }), uFloor, (x, z) => (((x >> 1) + (z >> 1)) % 2 ? 'white' : 'lbg'), { tiles: true, sizes: [[2, 2, '3068b'], [2, 1, '3069b'], [1, 1, '3070b']] });
-  mb.unreserve(keep2, uFloor, uFloor + 1);
   mb.add('15332', C.wood, 18, uFloor, 28, 0);
 
   mb.section('Master bedroom', { bag: 6, level: 'upper', view: 'back' });
@@ -381,6 +359,20 @@ export function buildHouse() {
   F.bathtub(mb, 37, uFloor, 11, 0);
   F.toilet(mb, 33, uFloor, 11, 0);
   F.pedestalSink(mb, 35, uFloor, 11, 0);
+  const lastU = mb.cur;
+
+  mb.use(floorsU);
+  const figSpotsU = [[37, 22], [38, 22], [27, 24], [28, 24]];
+  mb.reserve(figSpotsU, uFloor, uFloor + 1);
+  const uroom = (x0, z0, x1, z1, col) => mb.fill(rectCells({ x0, z0, x1, z1 }), uFloor, col, { tiles: true });
+  uroom(7, 10, 16, 32, 'darkRed');                       // master bedroom carpet
+  uroom(17, 20, 25, 29, 'reddishBrown');                 // hall
+  uroom(26, 20, 31, 29, 'medNougat');                    // study
+  uroom(17, 10, 31, 19, 'sandGreen');                    // nursery
+  uroom(32, 20, 41, 30, 'darkBlue');                     // Violet's room
+  mb.fill(rectCells({ x0: 32, z0: 10, x1: 41, z1: 19 }), uFloor, (x, z) => (((x >> 1) + (z >> 1)) % 2 ? 'white' : 'lbg'), { tiles: true, sizes: [[2, 2, '3068b'], [2, 1, '3069b'], [1, 1, '3070b']] });
+  mb.unreserve(figSpotsU, uFloor, uFloor + 1);
+  mb.use(lastU);
 
   // ============================================================= BAG 7: attic, turret & roofs
   mb.section('Attic floor', { bag: 7, level: 'attic', view: 'top', maxStep: 10 });
@@ -510,6 +502,9 @@ export function buildHouse() {
   for (const [x, z] of [[8, 33], [11, 33], [14, 33], [35, 32], [38, 32]]) mb.tryAdd('6064', 'green', x, Y.terrace + 1, z);
   for (const [x, z] of [[22, 36], [19, 35], [33, 33], [41, 33], [3, 33]]) mb.tryAdd('2423', 'green', x, Y.terrace + 1, z);
   for (const [x, z] of [[9, 40], [13, 41], [17, 39], [36, 41], [42, 40], [22, 42], [4, 42], [44, 36]]) mb.tryAdd('24866', ['red', 'white', 'yellow'][(x + z) % 3], x, Y.terrace + 1, z);
+  // Halloween: jack-o'-lanterns by the porch steps
+  for (const [x, z] of [[33, 35], [23, 37]]) if (mb.tryAdd('3941', 'orange', x, Y.terrace + 1, z) >= 0) mb.add('6141', 'green', x, Y.terrace + 4, z);
+  if (mb.tryAdd('3062b', 'orange', 25, Y.terrace + 1, 36) >= 0) mb.add('6141', 'green', 25, Y.terrace + 4, 36);
 
   // ============================================================= BAG 9: backyard
   mb.section('Backyard gazebo', { bag: 9, level: 'gazebo', view: 'back', maxStep: 12 });

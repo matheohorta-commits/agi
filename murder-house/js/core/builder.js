@@ -71,6 +71,9 @@ export class ModelBuilder {
     return s;
   }
 
+  // switch back to an earlier section (e.g. lay a floor around furniture that was placed first)
+  use(sec) { this.cur = sec; return sec; }
+
   occAt(x, y, z) { return this.occ.get(KEY(x, y, z)); }
   isFreeCell(x, y, z) { const k = KEY(x, y, z); return !this.occ.has(k) && !this.reserved.has(k); }
 

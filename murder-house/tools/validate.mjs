@@ -108,7 +108,7 @@ if (catalog) {
     const e = catalog.parts[id];
     if (!e) { console.log('  not in catalogue:', id); missing++; continue; }
     const rb = COLORS[c].rb;
-    if (!e.colors[rb] && !PARTS[id].figPart) { console.log(`  never produced: ${id} ${PARTS[id].name} in ${c} (${count[k]}x)`); missing++; }
+    if (!e.colors[rb]) { console.log(`  never produced: ${id} ${PARTS[id].name} in ${c} (${count[k]}x)`); missing++; }
   }
   console.log(`catalogue check: ${missing} problems`);
   bad += missing;

@@ -21,6 +21,7 @@ export const COLORS = {
   medNougat:      { name: 'Medium Nougat',     rb: 84,  bl: 150, hex: '#aa7d55', rgb: 'AA7D55' },
   brightLightYellow: { name: 'Bright Light Yellow', rb: 226, bl: 103, hex: '#fff03a', rgb: 'FFF03A' },
   yellow:         { name: 'Yellow',            rb: 14,  bl: 3,   hex: '#f2cd37', rgb: 'F2CD37' },
+  orange:         { name: 'Orange',            rb: 25,  bl: 4,   hex: '#fe8a18', rgb: 'FE8A18' },
   darkOrange:     { name: 'Dark Orange',       rb: 484, bl: 68,  hex: '#a95500', rgb: 'A95500' },
   pearlGold:      { name: 'Pearl Gold',        rb: 297, bl: 115, hex: '#b8903a', rgb: 'AA7F2E', metal: true },
   flatSilver:     { name: 'Flat Silver',       rb: 179, bl: 95,  hex: '#9a9899', rgb: '898788', metal: true },

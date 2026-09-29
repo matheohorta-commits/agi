@@ -32,7 +32,8 @@ export class PartsList {
         <div><b>${bom.lots.length}</b><span>different part / colour lots</span></div>
         <div><b>€${Math.round(low)}–${Math.round(high)}</b><span>estimated cost on BrickLink (new parts)</span></div>
         <div><b>${Math.round((100 * common) / bom.pieces)}%</b><span>of pieces are common or very common</span></div>
-        <div><b>${steps.length}</b><span>instruction steps · 10 bags</span></div>
+        <div><b>${steps.length}</b><span>instruction steps in 10 bags</span></div>
+        <div><b>9</b><span>minifigures from plain parts</span></div>
       </div>
       <div class="filters">
         <input type="search" id="pl-q" placeholder="Search part number, name or colour" aria-label="Search parts">
@@ -131,16 +132,26 @@ export class PartsList {
     setTimeout(() => (out.textContent = ''), 2500);
   }
 
-  download(which) {
+  async download(which) {
     const ta = this.el.querySelector('#t-' + which);
-    const name = { bl: 'murder-house-bricklink.xml', rb: 'murder-house-rebrickable.csv', csv: 'murder-house-parts.csv' }[which];
+    const out = this.el.querySelector('#c-' + which);
+    const say = (t) => { out.textContent = t; setTimeout(() => (out.textContent = ''), 3500); };
+    const names = { bl: 'murder-house-bricklink.xml', rb: 'murder-house-rebrickable.csv', csv: 'murder-house-parts.csv' };
+    // inside the claude.ai viewer files go through the downloads capability (.xml is not allowed there: .txt)
+    const dl = window.claude?.use ? await window.claude.use('downloads').catch(() => null) : null;
+    if (dl) {
+      try {
+        await dl.save({ filename: which === 'bl' ? 'murder-house-bricklink-xml.txt' : names[which], data: ta.value });
+        say('Saved');
+      } catch (e) {
+        say(e?.code === 'declined' ? 'Download cancelled' : 'Download not available here: use Copy');
+      }
+      return;
+    }
     const url = URL.createObjectURL(new Blob([ta.value], { type: which === 'bl' ? 'application/xml' : 'text/csv' }));
     const a = document.createElement('a');
-    a.href = url; a.download = name;
+    a.href = url; a.download = names[which];
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 2000);
-    const out = this.el.querySelector('#c-' + which);
-    out.textContent = 'If nothing downloaded, use Copy instead';
-    setTimeout(() => (out.textContent = ''), 3500);
   }
 }
