@@ -208,7 +208,10 @@
     bindKeys();
     if (saved) {
       boot(saved);
-      const res = offline(saved);
+      const fixed = saved._repaired || [];
+      if (fixed.length) setTimeout(() => G.UI.toast(`🔧 Your save had damaged data (${fixed.slice(0, 4).join(', ')}${fixed.length > 4 ? '…' : ''}). It was repaired automatically — your progress is kept.`, 'bad', 10000), 900);
+      let res = null;
+      try { res = offline(saved); } catch (e) { Main.reportError('offline', e); }
       if (res) setTimeout(() => G.Modals.welcome(res), 300);
     } else {
       // show intro over a fresh garage in the background

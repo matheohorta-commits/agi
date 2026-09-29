@@ -315,6 +315,8 @@
   function finishTraining() {
     const tr = S.training;
     S.training = null;
+    if (!Array.isArray(S.models)) S.models = []; // never let a damaged save block a finished model
+    if (!(S.deployed < S.models.length)) S.deployed = -1;
     const R = C.lossR(tr.N, tr.D, tr.kN, tr.kD);
     const capPre = C.capPre(tr.N, tr.D, tr.kN, tr.kD, tr.arch);
     S.bestN = Math.max(S.bestN || 0, tr.N);
