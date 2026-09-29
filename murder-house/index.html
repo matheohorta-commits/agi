@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- APP:HEAD:BEGIN -->
+<title>The Murder House Brick Set</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&family=Archivo:wght@700;800&display=swap">
+<!-- APP:HEAD:END -->
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<!-- APP:BODY:BEGIN -->
+<div id="app" class="app" data-mode="explore">
+  <header class="bar">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 40 40" aria-hidden="true"><path d="M4 36V18L13 8l9 10v18M22 36V14l7-8 7 8v22M4 36h32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><rect x="10" y="22" width="5" height="7" fill="currentColor"/><rect x="26" y="18" width="5" height="6" fill="var(--amber)"/></svg>
+      <div class="brand-text">
+        <h1>The Murder House</h1>
+        <p id="brand-sub">1120 Westchester Pl. · Los Angeles</p>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Mode">
+      <button role="tab" id="tab-explore" data-mode="explore" aria-selected="true">3D house</button>
+      <button role="tab" id="tab-booklet" data-mode="booklet" aria-selected="false">Instructions</button>
+      <button role="tab" id="tab-build" data-mode="build" aria-selected="false">Build it yourself</button>
+      <button role="tab" id="tab-parts" data-mode="parts" aria-selected="false">Parts &amp; buying</button>
+    </nav>
+    <div class="radio" id="radio">
+      <button class="radio-play" id="radio-play" aria-label="Play music" title="Play music">
+        <svg viewBox="0 0 24 24" class="i-play"><path d="M7 4l13 8-13 8z"/></svg>
+        <svg viewBox="0 0 24 24" class="i-pause"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>
+      </button>
+      <button class="radio-station" id="radio-station" aria-haspopup="true" aria-expanded="false">
+        <span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span class="radio-text"><b id="radio-name">Murder House Lofi</b><small id="radio-track">tap play · built-in radio</small></span>
+      </button>
+      <input type="range" id="radio-vol" min="0" max="100" value="60" aria-label="Volume">
+      <div class="radio-menu" id="radio-menu" hidden></div>
+    </div>
+  </header>
+
+  <main class="stage">
+    <canvas id="view" aria-label="3D model of the Murder House built from LEGO parts"></canvas>
+    <div class="loading" id="loading"><div class="loading-inner"><div class="spinner"></div><p>Laying the first brick…</p></div></div>
+
+    <!-- explore mode -->
+    <aside class="panel explore-only" id="explore-panel">
+      <section>
+        <h2>Floors</h2>
+        <div class="chips" id="level-chips"></div>
+      </section>
+      <section>
+        <h2>View</h2>
+        <div class="seg" id="view-buttons">
+          <button data-view="front">Street</button><button data-view="back">Dollhouse</button><button data-view="top">Above</button>
+        </div>
+        <label class="slider"><span>Lift floors apart</span><input type="range" id="explode" min="0" max="100" value="0"></label>
+        <div class="toggles">
+          <label class="switch"><input type="checkbox" id="night"><span>Night</span></label>
+          <label class="switch"><input type="checkbox" id="spin"><span>Turntable</span></label>
+        </div>
+      </section>
+      <section>
+        <h2>Build timeline</h2>
+        <div class="timeline">
+          <button class="icon-btn" id="tl-play" aria-label="Play the build">▶</button>
+          <input type="range" id="tl" min="0" max="1" value="1" aria-label="Build step">
+        </div>
+        <p class="tl-label" id="tl-label"></p>
+      </section>
+      <p class="hint">Drag to orbit · scroll to zoom · right-drag to pan · hover a brick to identify it</p>
+    </aside>
+    <div class="tip" id="tip" hidden></div>
+    <div class="info-card" id="info-card" hidden></div>
+
+    <!-- build mode -->
+    <div class="build-hud build-only" id="build-hud">
+      <div class="build-top">
+        <div class="build-step">
+          <span class="build-num" id="b-num">1</span>
+          <div><b id="b-title">Base plates</b><small id="b-sub">Bag 1</small></div>
+        </div>
+        <div class="build-stats"><span id="b-placed">0</span> placed by hand · <span id="b-time">0:00</span></div>
+        <div class="build-actions">
+          <button id="b-prev" title="Previous step">◀ Step</button>
+          <button id="b-hint" aria-pressed="true" title="Show or hide the outlines of where the parts go">Spots shown</button>
+          <button id="b-auto" title="Let the parts snap in by themselves">Auto-place</button>
+          <button id="b-next" class="primary" title="Next step">Step ▶</button>
+        </div>
+      </div>
+      <div class="tray" id="tray" aria-label="Parts for this step"></div>
+      <div class="toast" id="toast" hidden></div>
+    </div>
+
+    <!-- instruction booklet -->
+    <section class="booklet booklet-only" id="booklet" aria-label="Instruction booklet">
+      <div class="spread" id="spread"></div>
+      <div class="bk-nav">
+        <button id="bk-prev" aria-label="Previous pages">◀</button>
+        <select id="bk-jump" aria-label="Jump to"></select>
+        <input type="range" id="bk-page" min="0" max="1" value="0" aria-label="Page">
+        <span id="bk-count" class="bk-count"></span>
+        <button id="bk-next" aria-label="Next pages">▶</button>
+      </div>
+    </section>
+
+    <!-- parts list -->
+    <section class="parts parts-only" id="parts" aria-label="Parts list"></section>
+  </main>
+</div>
+<!-- APP:BODY:END -->
+<script type="importmap">{"imports":{"three":"./vendor/three.module.min.js","three/addons/":"./vendor/addons/"}}</script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

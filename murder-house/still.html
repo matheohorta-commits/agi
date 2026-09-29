@@ -1,0 +1,30 @@
+<!doctype html><html><head><meta charset="utf-8"><title>test</title>
+<style>html,body{margin:0;height:100%;background:#222}canvas{width:100%;height:100%;display:block}</style>
+<script type="importmap">{"imports":{"three":"./vendor/three.module.min.js","three/addons/":"./vendor/addons/"}}</script>
+</head><body><canvas id="c"></canvas>
+<script type="module">
+import { buildHouse } from './js/model/house.js';
+import { makeSteps } from './js/core/steps.js';
+import { BrickScene } from './js/gfx/scene.js';
+const q = new URLSearchParams(location.search);
+const mb = buildHouse();
+const steps = makeSteps(mb);
+const sc = new BrickScene(document.getElementById('c'));
+sc.setModel(mb);
+const hide = (q.get('hide') || '').split(',').filter(Boolean);
+hide.forEach(h => sc.hiddenLevels.add(h));
+if (q.get('step')) { const n = +q.get('step'); const set = new Set(); steps.slice(0, n).forEach(s => s.parts.forEach(i => set.add(i))); sc.setVisibility(i => set.has(i)); }
+sc.explode = +(q.get('explode') || 0);
+sc.update();
+if (q.get('night')) sc.setNight(true);
+sc.resize();
+const box = sc.boxOf(mb.parts.map((_, i) => i).filter(i => sc.isShown(i)));
+const v = q.get('view') || 'front';
+const { center } = sc.frame(box, v, sc.camera, +(q.get('pad') || 1.0));
+sc.controls.target.copy(center);
+if (q.get('cam')) { const [x,y,z,tx,ty,tz] = q.get('cam').split(',').map(Number); sc.camera.position.set(x,y,z); sc.controls.target.set(tx,ty,tz); sc.camera.lookAt(tx,ty,tz);}
+sc.start();
+let frames = 0;
+sc.onFrame.push(() => { if (++frames === 2) { sc.paused = true; window.__ready = true; } });
+window.__stats = { parts: mb.parts.length, steps: steps.length, errors: mb.errors.length };
+</script></body></html>

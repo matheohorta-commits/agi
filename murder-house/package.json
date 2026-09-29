@@ -1,0 +1,15 @@
+{
+  "name": "murder-house-brick-set",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A buildable LEGO-parts model of the American Horror Story season 1 Murder House, with a 3D viewer, instruction booklet, build mode and parts list.",
+  "scripts": {
+    "serve": "npx http-server -c-1 -p 8120 .",
+    "validate": "node tools/validate.mjs",
+    "build": "node tools/build-single.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  }
+}

@@ -117,3 +117,11 @@ player, then the cosmic layer and Omega loops.
 - Saves live in Electron's `localStorage` (userData). For Steam Cloud, mirror `G.Save.exportString(G.S)` to a file in `app.getPath('userData')`.
 - **Legal:** real companies and public figures appear as parody/commentary. Before a commercial release, have this reviewed — you may want
   to switch to parody names. All names live in `js/data/labs.js`, `js/data/cards.js` and `js/data/feed.js`, so this is a data-only change.
+
+---
+
+## Also in this repo: The Murder House brick set
+
+[`murder-house/`](murder-house/) is a buildable LEGO-parts model of the *American Horror Story* season 1 house,
+with a 3D viewer, an instruction booklet, a build-it-yourself mode, a priced parts list with BrickLink/Rebrickable
+exports, and a lofi/synthwave radio. Open `murder-house/standalone/murder-house.html` to play with it.
