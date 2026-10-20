@@ -193,8 +193,38 @@ function botDecide() {
   }
   // cosmos
   if (S.cosmos) {
+    const c = S.cosmos;
     for (const p of G.MEGAPROJECTS) if (Sim.projectAvailable(p)) Sim.buyProject(p.id);
-    if (Sim.omegaGain() > 0 && !S._omegaDone) { S._omegaDone = true; }
+    // exploration matters once probes fly; keep some compute for capability
+    if (c.projects.probes) { c.alloc.explore = 0.5; c.alloc.rep = 0.25; c.alloc.compute = 0.25; }
+    // save for the next megaproject only if it's close to affordable, otherwise buy structures by value
+    const next = G.MEGAPROJECTS.find((p) => !c.projects[p.id]);
+    const reserve = next && Sim.projectAvailable(next) ? next.cost.joules : 0;
+    for (let k = 0; k < 40; k++) {
+      let best = null, bv = 0;
+      for (const st of G.COSMIC_STRUCTS) {
+        if (!Sim.structUnlocked(st)) continue;
+        const cost = Sim.structCost(st, 1);
+        if (cost > c.joules - reserve) continue;
+        const w = (st.fx.cap || 0) + (st.fx.rep || 0) * 0.5 + (st.fx.flop || 0) * 0.3 + (st.fx.explore || 0) * (c.projects.probes ? 3 : 0);
+        const v = w / cost;
+        if (v > bv) { bv = v; best = st; }
+      }
+      if (!best || !Sim.buyStruct(best.id, 1)) break;
+    }
+    if (Sim.omegaGain() > 0 && !process.env.NOOMEGA) {
+      const offers = Sim.universeOffers();
+      log.push(`${fmtT(simT)}  OMEGA available (+${Sim.omegaGain()} Ω)`);
+      Sim.omegaPrestige(offers[1 + (S.omega.count % 2)].id || 'standard');
+      S = G.Sim.state();
+      for (let k = 0; k < 30; k++) {
+        let bought = false;
+        for (const u of G.OMEGA_UPGRADES) if (Sim.buyOmegaUp(u.id)) { bought = true; break; }
+        if (!bought) break;
+      }
+      for (let k = 0; k < 40; k++) { let b = false; for (const id of LESSON_PRIO) if (Sim.buyLesson(id)) { b = true; break; } if (!b) break; }
+      S.auto = { hw: true, src: true, power: true, train: false, research: false, hire: true, trainEta: 60, deploy: true };
+    }
   }
 }
 

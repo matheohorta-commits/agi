@@ -19,7 +19,17 @@
       hw: {}, res: {}, safety: {}, src: {}, pow: {},
       cost_cai: 1, cost_chat: 1, cosReplicate: 1, cosEff: 1, cosEnergy: 1,
       capPreMult: 1, misalignRate: 1, noClick: false, noProducts: false, dropPower: 1,
+      cosExplore: 1, insightRate: 1, omegaGain: 1, synK: 1,
     };
+  }
+
+  /** permanent Ω upgrades + the current universe variant */
+  function applyOmega(s, M, D) {
+    const ups = (s.omega && s.omega.ups) || {};
+    for (const u of G.OMEGA_UPGRADES || []) if (ups[u.id]) u.fx(M, ups[u.id]);
+    const uni = (G.UNIVERSES || []).find((x) => x.id === s.universe);
+    if (uni) uni.fx(M);
+    D.universe = uni || null;
   }
 
   /** the optimization layer (data/strategy.js): synergies, building levels, hype & influencers, the Board, Shoggoth auras */
@@ -31,8 +41,8 @@
     for (const sy of G.SYNERGIES) {
       if (!s.syn[sy.id]) continue;
       const [ak, aid] = sy.a, [bk, bid] = sy.b;
-      table[ak][aid] = (table[ak][aid] || 1) * (1 + sy.ka * ST.SYN_K * owned(bk, bid));
-      table[bk][bid] = (table[bk][bid] || 1) * (1 + sy.kb * ST.SYN_K * owned(ak, aid));
+      table[ak][aid] = (table[ak][aid] || 1) * (1 + sy.ka * ST.SYN_K * M.synK * owned(bk, bid));
+      table[bk][bid] = (table[bk][bid] || 1) * (1 + sy.kb * ST.SYN_K * M.synK * owned(ak, aid));
     }
     for (const key in s.levels) {
       const lv = s.levels[key];
@@ -184,15 +194,16 @@
     M.ap *= Math.sqrt(blMult);
     D.blMult = blMult;
     // omega
-    const om = Math.pow(1 + s.omega.total, 0.8);
+    const om = Math.pow(1 + s.omega.total, 0.5);
     M.compute *= om; M.money *= om; M.rp *= om; M.ap *= om; M.data *= om;
-    M.bl *= 1 + s.omega.total * 0.25;
+    M.bl *= 1 + s.omega.total * 0.1;
     D.omegaMult = om;
     // achievements
     const achN = Object.keys(s.achievements).length;
     const am = 1 + 0.01 * achN;
     M.compute *= am; M.money *= am; M.rp *= am;
     D.achMult = am;
+    applyOmega(s, M, D);
     applyStrategy(s, M, D);
     // story flags
     if (s.flags.race) M.rdMult *= 2;
@@ -240,7 +251,9 @@
     D.cosmicCompute = 0;
     if (s.cosmos) {
       const c = s.cosmos;
-      D.cosmicCompute = c.energy * G.COSMOS.BASE_EFF * M.cosEff * (c.alloc.compute || 0) * 1e-3;
+      D.cosFx = G.cosmicFx(c);
+      D.cosCaps = G.cosmicCaps(c.projects);
+      D.cosmicCompute = c.energy * G.COSMOS.BASE_EFF * M.cosEff * (c.alloc.compute || 0) * 1e-3 * D.cosFx.flop * D.cosCaps.flop;
     }
     D.compute = raw * M.compute * D.throttle + D.cosmicCompute * M.compute;
     D.mfu = Math.min(B.MAX_MFU, B.BASE_MFU + M.mfu);

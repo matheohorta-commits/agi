@@ -36,6 +36,7 @@
     { id: 'o_choice', text: 'Face the October 2027 decision (capability 405)', cond: (s) => s.flags.race || s.flags.slowdown, reward: { strawberries: 40 } },
     { id: 'o_asi', text: 'Reach SUPERINTELLIGENCE (capability 500)', cond: (s) => s.flags.asi, reward: { packs: { legendary: 2 } } },
     { id: 'o_robots', text: 'Start the Robot Economy (COSMOS)', cond: (s) => s.cosmos && s.cosmos.projects.robot_economy, reward: { strawberries: 50 } },
+    { id: 'o_struct', text: 'Build a Cosmic Structure with harvested joules (COSMOS)', cond: (s) => s.cosmos && Object.values(s.cosmos.structs || {}).some((n) => n > 0), reward: { strawberries: 30 } },
     { id: 'o_mercury', text: 'Disassemble Mercury', cond: (s) => s.cosmos && s.cosmos.projects.mercury, reward: { packs: { legendary: 1 } } },
     { id: 'o_dyson', text: 'Capture the whole Sun: 10²⁶ W', cond: (s) => s.cosmos && s.cosmos.energy >= 1e26, reward: { packs: { legendary: 1 } } },
     { id: 'o_galaxy', text: 'Colonize the Milky Way (10¹¹ stars)', cond: (s) => s.cosmos && s.cosmos.stars >= 9.9e10, reward: { packs: { legendary: 2 } } },

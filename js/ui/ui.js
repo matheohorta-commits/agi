@@ -344,7 +344,7 @@
     bus.on('rivalRelease', () => {});
     bus.on('dropCaught', () => {});
     bus.on('prestige', (e) => { G.Hist.data = []; G.Modals.reset(); G.Audio.prestige(); G.FX.confetti(200); if (e.challenge) UI.banner('CHALLENGE', e.challenge.name.toUpperCase(), e.challenge.rules); else UI.banner('THE BITTER LESSON', `+${e.gain} BITTER LESSONS`, 'General methods that leverage computation are ultimately the most effective.'); UI.rebuild(); });
-    bus.on('omega', (e) => { G.Hist.data = []; G.Modals.reset(); G.Audio.asi(); G.FX.confetti(300); UI.banner('OMEGA POINT', `+${e.gain} Ω`, 'A new universe begins. It remembers you.'); UI.rebuild(); });
+    bus.on('omega', (e) => { G.Hist.data = []; G.Modals.reset(); G.Audio.asi(); G.FX.confetti(300); UI.banner('OMEGA POINT · +' + e.gain + ' Ω', (e.universe ? e.universe.name : 'A NEW UNIVERSE').toUpperCase(), e.universe ? e.universe.desc : 'A new universe begins. It remembers you.'); UI.rebuild(); });
     bus.on('asi', () => G.Modals.asi());
     bus.on('era', (e) => {
       G.Audio.Music.setTheme(G.Scene.themeFor(G.S, G.D));

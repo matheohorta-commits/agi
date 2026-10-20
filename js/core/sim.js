@@ -777,6 +777,7 @@
       stars: 1,
       alloc: { rep: 0.5, compute: 0.4, explore: 0.1 },
       projects: {},
+      structs: {},
       t: 0,
     };
     for (const [who, t] of G.FEED_REACT.asi) post(who, t);
@@ -846,23 +847,45 @@
   function tickCosmos(dt) {
     const c = S.cosmos;
     if (!c) return;
+    c.structs = c.structs || {};
     const M = D.M;
     const P = c.projects;
     const K = G.COSMOS;
+    const F = G.cosmicFx(c);
+    const caps = G.cosmicCaps(P);
     c.t += dt;
-    const rep = P.robot_economy ? K.BASE_REP * (0.25 + c.alloc.rep) * M.cosReplicate : 0.002 * (0.25 + c.alloc.rep);
-    let maxE = (P.mercury ? K.SUN * Math.max(1, c.stars) : K.EARTH_MAX) * M.cosEnergy * (P.blackholes ? 100 : 1);
+    const rep = (P.robot_economy ? K.BASE_REP * (0.25 + c.alloc.rep) * M.cosReplicate : 0.002 * (0.25 + c.alloc.rep)) * F.rep;
+    const maxE = (P.mercury ? K.SUN * Math.max(1, c.stars) : K.EARTH_MAX) * M.cosEnergy * caps.energy * F.cap;
     c.maxEnergy = maxE;
+    if (c.energy > maxE) c.energy = maxE;
     c.energy = Math.min(maxE, c.energy + c.energy * rep * Math.max(0, 1 - c.energy / maxE) * dt);
     c.joules += c.energy * dt;
     c.totalJoules = (c.totalJoules || 0) + c.energy * dt;
+    c.starCap = caps.starCap;
     if (P.probes) {
-      const cap = P.intergalactic ? K.UNIVERSE_STARS : P.galactic ? K.GALAXY_STARS : 1e6;
-      c.starCap = cap;
-      const g = K.BASE_EXPLORE * (0.2 + c.alloc.explore * 2) * (P.galactic ? 3 : 1) * (P.intergalactic ? 2 : 1);
-      c.stars = Math.min(cap, c.stars + c.stars * g * Math.max(0, 1 - c.stars / cap) * dt);
+      const g = K.BASE_EXPLORE * (0.2 + c.alloc.explore * 2) * caps.explore * F.explore * M.cosExplore;
+      c.exploreRate = g;
+      c.stars = Math.min(caps.starCap, c.stars + c.stars * g * Math.max(0, 1 - c.stars / caps.starCap) * dt);
     }
   }
+  /* ---------------- cosmic structures (joule store) */
+  Sim.structOwned = (id) => (S.cosmos && S.cosmos.structs && S.cosmos.structs[id]) || 0;
+  Sim.structUnlocked = (st) => !!(S.cosmos && S.cosmos.projects[st.after]);
+  Sim.structCost = (st, n) => U.bulkCost(st.base, G.COSMOS.STRUCT_R, Sim.structOwned(st.id), n || 1);
+  Sim.structMax = (st) => (S.cosmos ? U.maxAffordable(st.base, G.COSMOS.STRUCT_R, Sim.structOwned(st.id), S.cosmos.joules) : 0);
+  Sim.buyStruct = (id, n) => {
+    const st = G.COSMIC_STRUCTS.find((x) => x.id === id);
+    if (!st || !Sim.structUnlocked(st)) return 0;
+    if (n === 'max') n = Sim.structMax(st);
+    if (!(n > 0)) return 0;
+    const cost = Sim.structCost(st, n);
+    if (cost > S.cosmos.joules) return 0;
+    S.cosmos.joules -= cost;
+    S.cosmos.structs[id] = Sim.structOwned(id) + n;
+    Sim.recalc();
+    bus.emit('struct', { st, n });
+    return n;
+  };
   Sim.setCosmosAlloc = (k, v) => {
     const c = S.cosmos;
     if (!c) return;
@@ -897,9 +920,10 @@
     const L = s.prestige.lessons;
     const cash = G.lessonStartCash(L.capital || 0);
     s.money += cash;
-    const mem = G.MEMORY_TIERS[L.memory || 0] || 0;
+    const ups = (s.omega && s.omega.ups) || {};
+    const mem = Math.max(G.MEMORY_TIERS[L.memory || 0] || 0, [0, 120, 170, 210, 250, 290][ups.u_physics || 0]);
     if (mem > 0) for (const r of G.RESEARCH) if (r.t <= mem && !r.asi) s.research[r.id] = true;
-    const hs = G.HEADSTART_CAP[L.headstart || 0] || 0;
+    const hs = Math.max(G.HEADSTART_CAP[L.headstart || 0] || 0, [0, 150, 200, 260][ups.u_weights || 0]);
     if (hs > 0) {
       // a head start includes the know-how that model was built with
       for (const r of G.RESEARCH) if (r.t <= hs - 15 && !r.asi) s.research[r.id] = true;
@@ -945,24 +969,53 @@
 
   Sim.omegaGain = () => {
     if (!S.cosmos || !S.cosmos.projects.omega_project) return 0;
-    return Math.max(1, Math.floor(Math.pow(Math.max(0, Math.log10(S.cosmos.totalJoules || S.cosmos.joules || 1) - 48), 1.5)) + 1);
+    const lg = Math.log10(Math.max(1, S.cosmos.totalJoules || S.cosmos.joules || 1));
+    return Math.floor((1 + Math.floor(Math.pow(Math.max(0, lg - G.COSMOS.OMEGA_LOG), 1.5))) * D.M.omegaGain);
   };
-  Sim.omegaPrestige = () => {
+  /** three universe variants offered at the Omega Point (deterministic per Omega count so reopening the dialog doesn't reroll) */
+  Sim.universeOffers = () => {
+    const rng = U.seeded(1000 + S.omega.count * 7919 + (S.stats.asiCount || 0));
+    const pool = G.UNIVERSES.filter((u) => u.id !== 'standard' && u.id !== S.universe);
+    const picks = [];
+    while (picks.length < 2 && pool.length) picks.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
+    return [G.UNIVERSES[0]].concat(picks);
+  };
+  Sim.omegaPrestige = (universeId) => {
     const gain = Sim.omegaGain();
     if (gain < 1) return null;
     const old = S;
     old.omega.count++;
     old.omega.total += gain;
     old.omega.bank += gain;
+    old.omega.visited = old.omega.visited || {};
     // automation lessons persist; numeric lessons reset
     const keep = {};
     for (const k of ['autobuy', 'autotrain', 'autoresearch', 'autohire']) if (old.prestige.lessons[k]) keep[k] = old.prestige.lessons[k];
     old.prestige = { count: old.prestige.count, totalBL: 0, bank: 0, lessons: keep };
+    const uni = G.UNIVERSES.find((u) => u.id === universeId) || G.UNIVERSES[0];
+    old.universe = uni.id;
+    old.omega.visited[uni.id] = true;
     const s = G.newState(old.lab, old);
     s.flags = { tutorialDone: true, seenIntro: true };
+    applyStartLessons(s);
     Sim.set(s);
-    bus.emit('omega', { gain });
+    bus.emit('omega', { gain, universe: uni });
     return gain;
+  };
+  /* ---------------- Ω upgrades */
+  Sim.omegaUpLevel = (id) => (S.omega.ups && S.omega.ups[id]) || 0;
+  Sim.omegaUpCost = (u) => u.cost(Sim.omegaUpLevel(u.id));
+  Sim.buyOmegaUp = (id) => {
+    const u = G.OMEGA_UPGRADES.find((x) => x.id === id);
+    if (!u) return false;
+    const lv = Sim.omegaUpLevel(id);
+    if (lv >= u.max || S.omega.bank < u.cost(lv)) return false;
+    S.omega.bank -= u.cost(lv);
+    S.omega.ups = S.omega.ups || {};
+    S.omega.ups[id] = lv + 1;
+    Sim.recalc();
+    bus.emit('omegaUp', u);
+    return true;
   };
 
   /* ================================================================== automation */

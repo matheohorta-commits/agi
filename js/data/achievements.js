@@ -105,6 +105,18 @@
   add('storm50', 'Storm Chaser', 'Click 50 times during Click Storms', (s) => (s.stats.stormClicks || 0) >= 50);
   add('leak10', 'Insider', 'Catch 10 leaks in the news ticker', (s) => (s.stats.leaks || 0) >= 10);
 
+  // cosmos
+  const structs = (s) => (s.cosmos && s.cosmos.structs ? Object.values(s.cosmos.structs).reduce((a, b) => a + b, 0) : 0);
+  add('struct1', 'Megastructure', 'Build a cosmic structure', (s) => structs(s) >= 1);
+  add('struct250', 'Stellar Engineering Corps', 'Own 250 cosmic structures', (s) => structs(s) >= 250);
+  [[1e16, 'Type I', 'kard1'], [1e26, 'Type II', 'kard2'], [1e36, 'Type III', 'kard3'], [1e46, 'Type IV', 'kard4']].forEach(([w, n, id]) =>
+    add(id, 'Kardashev ' + n, `Capture ${G.U.fmtWatts(w)} of power`, (s) => s.cosmos && s.cosmos.energy >= w, id === 'kard4' ? { hidden: true } : undefined));
+  add('projects_all', 'Every Megaproject', 'Complete all megaprojects in one universe', (s) => s.cosmos && G.MEGAPROJECTS.every((p) => s.cosmos.projects[p.id]));
+  add('omega_up', 'Cosmic Investor', 'Buy an Ω upgrade', (s) => Object.keys((s.omega && s.omega.ups) || {}).length >= 1);
+  add('universes3', 'Multiverse Tourist', 'Visit 3 different universes', (s) => Object.keys((s.omega && s.omega.visited) || {}).length + 1 >= 3);
+  add('universes_all', 'Every Physics', 'Visit every universe variant', (s) => Object.keys((s.omega && s.omega.visited) || {}).length >= G.UNIVERSES.length - 1, { hidden: true });
+  add('omega5', 'Eternal Return', 'Pass through the Omega Point 5 times', (s) => s.omega.count >= 5);
+
   // labs
   add('lab_all', 'Every Lab', 'Unlock every lab', (s) => G.LAB_ORDER.every((id) => s.labsUnlocked[id]));
   add('secret_strawberry', 'Three R\'s', 'Click the strawberry drop 3 times in one session', (s) => s.stats.strawberryDrops >= 3, { hidden: true });

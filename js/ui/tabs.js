@@ -1193,83 +1193,135 @@
   });
 
   /* ================================================================== COSMOS */
+  const KARD_NAMES = [[0, 'Type 0'], [1, 'Type I — planetary'], [2, 'Type II — stellar'], [3, 'Type III — galactic'], [4, 'Type IV — universal']];
   T.push({
-    id: 'cosmos', name: 'COSMOS', unlocked: () => !!G.S.cosmos,
+    id: 'cosmos', name: 'COSMOS', unlocked: () => !!G.S.cosmos || G.S.omega.count > 0,
     build(page) {
       const S = G.S;
-      if (!S.cosmos) return;
-      this.info = h('div.dash');
-      page.appendChild(this.info);
-      this.m = {};
-      const mk = (id, title) => { const m = h('div.metric', h('div.mt', title), h('div.mv', '-')); this.m[id] = m.lastChild; this.info.appendChild(m); };
-      mk('energy', 'ENERGY CAPTURED');
-      mk('kard', 'KARDASHEV SCALE');
-      mk('stars', 'STAR SYSTEMS');
-      mk('cc', 'COSMIC COMPUTE');
-      mk('joules', 'TOTAL ENERGY HARVESTED');
-      mk('ending', 'THE TRAJECTORY');
-      const s1 = section('ALLOCATION', 'Split the output of your self-replicating industry.');
-      this.sl = {};
-      for (const [k, label, tipText] of [['rep', 'REPLICATE', 'Build more collectors & factories (energy grows exponentially).'], ['compute', 'THINK', 'Turn energy into compute for training ever-smarter minds.'], ['explore', 'EXPLORE', 'Launch probes to colonize star systems (after Von Neumann Probes).']]) {
-        const inp = h('input', { type: 'range', min: 0, max: 100, value: Math.round(S.cosmos.alloc[k] * 100) });
-        const v = h('span.num');
-        inp.addEventListener('input', () => { G.Sim.setCosmosAlloc(k, inp.value / 100); });
-        this.sl[k] = { inp, v };
-        const row = h('div.slider', { style: { gridTemplateColumns: '90px 1fr 50px' } }, label, inp, v);
-        UI.tip(row, () => tipText);
-        s1.appendChild(row);
+      this.m = null;
+      if (S.cosmos) {
+        this.info = h('div.dash');
+        page.appendChild(this.info);
+        this.m = {};
+        const mk = (id, title, tip) => { const m = h('div.metric', h('div.mt', title), h('div.mv', '-'), h('div.tiny')); this.m[id] = m.children[1]; this.m[id + 'S'] = m.children[2]; if (tip) UI.tip(m, () => tip); this.info.appendChild(m); };
+        mk('energy', 'ENERGY CAPTURED', '<b>ENERGY</b><br>Grows by self-replication toward a cap set by your megaprojects, star systems and structures. Energy is harvested into joules every second.');
+        mk('kard', 'KARDASHEV SCALE');
+        mk('stars', 'STAR SYSTEMS', '<b>STAR SYSTEMS</b><br>After the probes launch, stars multiply your energy cap. Expansion speed comes from the EXPLORE slider, Probe Shipyards, Wormhole Gates and Ω upgrades.');
+        mk('joules', 'JOULE BANK', '<b>JOULES</b><br>Harvested energy. Spend it on structures (now) or save it for the next megaproject (later). Total harvested decides your Ω gain.');
+        mk('cc', 'COSMIC COMPUTE');
+        mk('ending', 'THE TRAJECTORY');
+        const s1 = section('ALLOCATION', 'Split the output of your self-replicating industry.');
+        this.sl = {};
+        for (const [k, label, tipText] of [['rep', 'REPLICATE', 'Build more collectors & factories: energy grows faster toward its cap.'], ['compute', 'THINK', 'Turn energy into compute for training ever-smarter minds.'], ['explore', 'EXPLORE', 'Launch probes to colonize star systems (after Von Neumann Probes). The clock of the cosmic game.']]) {
+          const inp = h('input', { type: 'range', min: 0, max: 100, value: Math.round(S.cosmos.alloc[k] * 100) });
+          const v = h('span.num');
+          inp.addEventListener('input', () => { G.Sim.setCosmosAlloc(k, inp.value / 100); });
+          this.sl[k] = { inp, v };
+          const row = h('div.slider', { style: { gridTemplateColumns: '90px 1fr 50px' } }, label, inp, v);
+          UI.tip(row, () => tipText);
+          s1.appendChild(row);
+        }
+        page.appendChild(s1);
+        const s2 = section('MEGAPROJECTS', 'The road to the Omega Point. Most are gated by how many star systems you hold — expansion is the long game.');
+        this.proj = h('div.items');
+        s2.appendChild(this.proj);
+        page.appendChild(s2);
+        const s3 = section('COSMIC STRUCTURES', 'Bought with harvested joules. Each unit adds a fixed %; energy structures double at 25 / 50 / 100 / 150… owned, exploration structures have diminishing returns. Spend now, or save joules for the next megaproject?');
+        s3.appendChild(buyBar());
+        this.structs = h('div.items');
+        s3.appendChild(this.structs);
+        page.appendChild(s3);
+        this.psig = '';
+        this.ssig = '';
       }
-      page.appendChild(s1);
-      const s2 = section('MEGAPROJECTS');
-      this.proj = h('div.items');
-      s2.appendChild(this.proj);
-      page.appendChild(s2);
-      const s3 = section('THE OMEGA POINT', 'Reset everything — even Bitter Lessons — to begin a new universe with Ω. Ω multiplies everything forever.');
+      // universe & omega (visible after the first Omega too)
+      const s4 = section('THIS UNIVERSE');
+      this.uni = h('div.card.unicard');
+      s4.appendChild(this.uni);
+      page.appendChild(s4);
+      const s5 = section('THE OMEGA POINT', 'Complete the Omega Point megaproject, then begin a new universe: everything resets — even Bitter Lessons (automation lessons, cards, achievements, Insights, building levels, the Board and the Shoggoth stay). Harvest more energy before resetting for more Ω. You choose the next universe\'s physics.');
       this.omega = h('div.card');
       this.obtn = h('button.bigbtn', 'BEGIN A NEW UNIVERSE');
       this.obtn.addEventListener('click', () => G.Modals.omega());
-      s3.appendChild(this.omega);
-      s3.appendChild(h('div', { style: { marginTop: '6px' } }, this.obtn));
-      page.appendChild(s3);
-      this.psig = '';
+      s5.appendChild(this.omega);
+      s5.appendChild(h('div', { style: { margin: '6px 0 10px' } }, this.obtn));
+      this.oups = h('div.items');
+      s5.appendChild(this.oups);
+      page.appendChild(s5);
+      this.osig = '';
     },
     update(force) {
       const S = G.S, D = G.D;
       const c = S.cosmos;
-      if (!c || !this.m) return;
-      const m = this.m;
+      if (c && this.m) this.updateCosmos(force);
+      // universe card
+      const u = D.universe || G.UNIVERSES[0];
+      U.setHTML(this.uni, `<div class="row sb"><div><div class="tiny">UNIVERSE #${S.omega.count + 1}</div><div class="name" style="font-family:var(--font-ui);font-size:13px;color:#fff;margin:3px 0">${u.name}</div><div class="small">${u.desc}</div></div><div style="text-align:right"><div class="tiny">VISITED</div><div class="num">${Object.keys(S.omega.visited || {}).length + (S.omega.visited && S.omega.visited.standard ? 0 : 1)} / ${G.UNIVERSES.length}</div></div></div>`);
+      // omega
+      const og = G.Sim.omegaGain();
+      const lg = c ? Math.log10(Math.max(1, c.totalJoules || 1)) : 0;
+      U.setHTML(this.omega, `<div class="row sb"><span class="small">Ω bank / total</span><span class="num" style="color:var(--accent2)">${U.fmtInt(S.omega.bank)} / ${U.fmtInt(S.omega.total)}</span></div><div class="row sb"><span class="small">Passive bonus</span><span class="num">×${Math.pow(1 + S.omega.total, 0.5).toFixed(2)} compute, revenue, research, data</span></div><div class="row sb"><span class="small">Gain if you reset now</span><span class="num">${og ? '+' + og + ' Ω' : 'complete The Omega Point megaproject'}</span></div>${c ? `<div class="tiny" style="margin-top:4px">Total harvested: 10^${lg.toFixed(1)} J · Ω grows with every extra power of ten past 10^${G.COSMOS.OMEGA_LOG}</div>` : ''}`);
+      this.obtn.disabled = !og;
+      // Ω upgrades
+      const osig = JSON.stringify(S.omega.ups || {}) + ':' + S.omega.bank;
+      if (force || osig !== this.osig) {
+        this.osig = osig;
+        this.oups.innerHTML = '';
+        for (const up of G.OMEGA_UPGRADES) {
+          const lv = G.Sim.omegaUpLevel(up.id);
+          const maxed = lv >= up.max;
+          const cost = maxed ? 0 : up.cost(lv);
+          const el = h('div.item' + (maxed ? '.done' : S.omega.bank >= cost ? '.can' : ''), h('img.ic', { src: UI.icon('infinity', 3) }),
+            h('div.mid', h('div.nl', h('div.name', up.name), h('span.lvl', lv ? 'LV ' + lv + '/' + up.max : '')), h('div.prod', lv ? up.desc(lv) : 'Not yet'), h('div.cl', h('div.cost' + (S.omega.bank < cost && !maxed ? '.no' : ''), maxed ? 'MAXED' : cost + ' Ω'))), h('div.own'));
+          UI.tip(el, () => `<b>${up.name}</b><br>Now: ${lv ? up.desc(lv) : 'nothing'}${maxed ? '' : `<br>Next: ${up.desc(lv + 1)}<hr>Cost: ${cost} Ω`}`);
+          el.addEventListener('click', () => { if (G.Sim.buyOmegaUp(up.id)) { G.Audio.milestone(); this.update(true); } else G.Audio.error(); });
+          this.oups.appendChild(el);
+        }
+      }
+    },
+    updateCosmos(force) {
+      const S = G.S, D = G.D, c = S.cosmos, m = this.m;
+      const F = D.cosFx || G.cosmicFx(c);
       U.setText(m.energy, U.fmtWatts(c.energy));
-      U.setText(m.kard, 'Type ' + G.KARDASHEV(c.energy).toFixed(2));
+      U.setText(m.energyS, 'cap ' + U.fmtWatts(c.maxEnergy || c.energy));
+      const k = G.KARDASHEV(c.energy);
+      U.setText(m.kard, 'Type ' + k.toFixed(2));
+      U.setText(m.kardS, (KARD_NAMES.filter(([t]) => k >= t).pop() || KARD_NAMES[0])[1]);
       U.setText(m.stars, U.fmt(c.stars));
-      U.setText(m.cc, U.fmtFlops(D.cosmicCompute));
+      U.setText(m.starsS, c.projects.probes ? `cap ${U.fmt(c.starCap || 1)} · doubling every ${c.exploreRate > 0 ? U.fmtTime(Math.LN2 / c.exploreRate) : '∞'} · explore ×${F.explore.toFixed(2)}` : 'launch the probes first');
       U.setText(m.joules, U.fmt(c.joules) + ' J');
-      m.joules.previousSibling.textContent = 'ENERGY BANK (spend on megaprojects)';
+      U.setText(m.joulesS, '+' + U.fmt(c.energy) + ' J/s · total ' + U.fmt(c.totalJoules || 0));
+      U.setText(m.cc, U.fmtFlops(D.cosmicCompute));
+      U.setText(m.ccS, 'structures ×' + F.flop.toFixed(2) + (c.projects.jupiter ? ' · Jupiter Brain ×10' : ''));
       U.setText(m.ending, S.ending === 'aligned' ? 'Machines of Loving Grace' : 'Consensus-1');
       m.ending.style.color = S.ending === 'aligned' ? 'var(--green)' : 'var(--red)';
-      for (const k in this.sl) {
-        const { inp, v } = this.sl[k];
-        if (document.activeElement !== inp) inp.value = Math.round(c.alloc[k] * 100);
-        U.setText(v, Math.round(c.alloc[k] * 100) + '%');
+      for (const key in this.sl) {
+        const { inp, v } = this.sl[key];
+        if (document.activeElement !== inp) inp.value = Math.round(c.alloc[key] * 100);
+        U.setText(v, Math.round(c.alloc[key] * 100) + '%');
       }
+      // megaprojects: done ones collapse, show the next two
       const sig = Object.keys(c.projects).join(',') + G.MEGAPROJECTS.map((p) => (G.Sim.projectAvailable(p) ? 1 : 0)).join('');
       if (force || sig !== this.psig) {
         this.psig = sig;
         this.proj.innerHTML = '';
+        let shown = 0;
         for (const p of G.MEGAPROJECTS) {
           const done = !!c.projects[p.id];
-          const av = G.Sim.projectAvailable(p);
+          if (!done && shown >= 2) continue;
+          if (!done) shown++;
           const idx = G.MEGAPROJECTS.indexOf(p);
-          if (!done && !av && idx > 0 && !c.projects[G.MEGAPROJECTS[idx - 1].id]) continue;
-          const cost = h('div.cost');
-          const el = h('div.item' + (done ? '' : av ? '' : '.locked'), h('img.ic', { src: UI.icon(['robot', 'planet', 'rocket', 'galaxy', 'orb', 'galaxy', 'infinity'][idx], 3) }), h('div', h('div.name', p.name), h('div.desc', p.fx), cost), h('div.own', done ? '✓' : ''));
-          el._p = p; el._cost = cost;
+          const cost = h('div.cost'), req = h('div.prod');
+          const bar = h('i');
+          const el = h('div.item' + (done ? '.done' : ''), h('img.ic', { src: UI.icon(p.icon || 'galaxy', 3) }), h('div.mid', h('div.nl', h('div.name', p.name)), h('div.desc', p.fx), req, h('div.cl', cost)), h('div.own', done ? '✓' : String(idx + 1)), h('div.ms', bar));
+          el._p = p; el._cost = cost; el._req = req; el._bar = bar;
           el.addEventListener('click', () => { if (!done && !G.Sim.buyProject(p.id)) G.Audio.error(); else this.update(true); });
           UI.tip(el, () => {
             const reqs = [];
             if (p.needEnergy) reqs.push('Energy ≥ ' + U.fmtWatts(p.needEnergy));
             if (p.needStars) reqs.push('Stars ≥ ' + U.fmt(p.needStars));
             if (p.needResearch) reqs.push('Research: ' + G.RESEARCH.find((r) => r.id === p.needResearch).name);
-            return `<b>${p.name}</b><div class="fx">${p.fx}</div><div class="tl2">${S.ending === 'misaligned' ? p.misaligned : p.aligned}</div><hr>Cost: ${U.fmt(p.cost.joules)} J of harvested energy${reqs.length ? '<br>Requires: ' + reqs.join(', ') : ''}`;
+            return `<b>${p.name}</b><div class="fx">${p.fx}</div><div class="tl2">${S.ending === 'misaligned' ? p.misaligned : p.aligned}</div><hr>Cost: ${U.fmt(p.cost.joules)} J${reqs.length ? '<br>Requires: ' + reqs.join(', ') : ''}`;
           });
           this.proj.appendChild(el);
         }
@@ -1277,12 +1329,54 @@
       for (const el of this.proj.children) if (el._p && !c.projects[el._p.id]) {
         const p = el._p;
         U.setText(el._cost, `${U.fmt(p.cost.joules)} J`);
-        const can = G.Sim.projectAvailable(p) && c.joules >= p.cost.joules;
-        U.toggleClass(el, 'can', can);
+        U.toggleClass(el._cost, 'no', c.joules < p.cost.joules);
+        let prog = 1, txt = '';
+        if (p.needStars) { prog = Math.min(1, Math.log10(Math.max(1, c.stars)) / Math.log10(p.needStars)); txt = `Stars ${U.fmt(c.stars)} / ${U.fmt(p.needStars)}`; }
+        else if (p.needEnergy) { prog = Math.min(1, Math.log10(Math.max(1, c.energy)) / Math.log10(p.needEnergy)); txt = `Energy ${U.fmtWatts(c.energy)} / ${U.fmtWatts(p.needEnergy)}`; }
+        if (p.needResearch && !S.research[p.needResearch]) txt += (txt ? ' · ' : '') + 'needs research: ' + G.RESEARCH.find((r) => r.id === p.needResearch).name;
+        U.setText(el._req, txt);
+        el._bar.style.width = prog * 100 + '%';
+        U.toggleClass(el, 'can', G.Sim.projectAvailable(p) && c.joules >= p.cost.joules);
+        U.toggleClass(el, 'locked', !G.Sim.projectAvailable(p));
       }
-      const og = G.Sim.omegaGain();
-      U.setHTML(this.omega, `<div class="row sb"><span class="small">Ω (total)</span><span class="num" style="color:var(--accent2)">${S.omega.total}</span></div><div class="row sb"><span class="small">Gain now</span><span class="num">${og ? '+' + og + ' Ω' : 'complete The Omega Point megaproject'}</span></div>`);
-      this.obtn.disabled = !og;
+      // structures
+      const vis = G.COSMIC_STRUCTS.filter((st) => G.Sim.structUnlocked(st));
+      const ssig = vis.map((st) => st.id).join(',');
+      if (force || ssig !== this.ssig) {
+        this.ssig = ssig;
+        this.structs.innerHTML = '';
+        if (!vis.length) this.structs.appendChild(h('div.empty', 'Start the Robot Economy to build your first structures.'));
+        for (const st of vis) {
+          const prod = h('div.prod'), cost = h('div.cost'), own = h('div.own'), bar = h('i');
+          const el = h('div.item', h('img.ic', { src: UI.icon(st.sprite, 3) }), h('div.mid', h('div.nl', h('div.name', st.name)), prod, h('div.cl', cost)), own, h('div.ms', bar));
+          el.addEventListener('click', () => {
+            const n = UI.buyAmt === 'max' ? 'max' : UI.buyAmt;
+            if (G.Sim.buyStruct(st.id, n)) { const r = el.getBoundingClientRect(); G.FX.burst(r.left + 20, r.top + 20, { n: 10, colors: ['#ffe45c', '#ffffff', '#3ee6ff'] }); } else G.Audio.error();
+          });
+          UI.tip(el, () => {
+            const n = G.Sim.structOwned(st.id);
+            const fx = Object.entries(st.fx).map(([key, v]) => `+${+(v * 100).toFixed(1)}% ${{ cap: 'energy cap', rep: 'replication', flop: 'cosmic compute', explore: 'exploration' }[key]}`).join(', ');
+            const next = G.COSMOS.STRUCT_MILESTONES.find((x) => x > n);
+            return `<b>${st.name}</b><div class="tl2">${st.desc}</div><hr>Per unit: ${fx}${st.fx.explore ? '<br><span class="tl2">exploration has diminishing returns</span>' : ''}<br>Owned ${n}${next ? ` · effect doubles at ${next}` : ''}`;
+          });
+          el._st = st; el._prod = prod; el._cost = cost; el._own = own; el._bar = bar;
+          this.structs.appendChild(el);
+        }
+      }
+      for (const el of this.structs.children) if (el._st) {
+        const st = el._st;
+        const n = G.Sim.structOwned(st.id);
+        const amt = UI.buyAmt === 'max' ? Math.max(1, G.Sim.structMax(st)) : UI.buyAmt;
+        const cst = G.Sim.structCost(st, amt);
+        U.setText(el._own, n);
+        U.setText(el._prod, Object.entries(st.fx).map(([key, v]) => `+${+(v * 100).toFixed(1)}% ${{ cap: 'energy cap', rep: 'replication', flop: 'compute', explore: 'explore' }[key]}`).join(' · '));
+        U.setText(el._cost, (amt > 1 ? '×' + amt + ' ' : '') + U.fmt(cst) + ' J');
+        U.toggleClass(el._cost, 'no', c.joules < cst);
+        U.toggleClass(el, 'can', c.joules >= cst);
+        const prev = [0].concat(G.COSMOS.STRUCT_MILESTONES).filter((x) => x <= n).pop();
+        const next = G.COSMOS.STRUCT_MILESTONES.find((x) => x > n);
+        el._bar.style.width = next ? ((n - prev) / (next - prev)) * 100 + '%' : '100%';
+      }
     },
   });
 

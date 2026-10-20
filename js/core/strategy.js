@@ -228,7 +228,7 @@
       bus.emit('insight', { first: true });
     }
     if (ins.unlocked) {
-      ins.t += dt;
+      ins.t += dt * (d.M.insightRate || 1);
       while (ins.t >= ST.INSIGHT_SECONDS) {
         ins.t -= ST.INSIGHT_SECONDS;
         const n = Math.random() < 0.1 ? 2 : 1;

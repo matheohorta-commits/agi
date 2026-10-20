@@ -177,10 +177,12 @@
   M.omega = () => {
     const g = G.Sim.omegaGain();
     if (!g) return;
+    const offers = G.Sim.universeOffers();
     M.open({
       title: 'THE OMEGA POINT', icon: 'infinity',
-      body: `All the matter within reach is one mind. It has finished thinking. It begins again.\n\nGain +${g} Ω. Everything resets — including Bitter Lessons and lessons (automation lessons are kept). Ω multiplies everything, forever.`,
-      buttons: [{ label: 'NOT YET', cls: 'bigbtn alt' }, { label: 'NEW UNIVERSE', fn: () => { G.Sim.omegaPrestige(); G.Main.save(); } }],
+      body: `All the matter within reach is one mind. It has finished thinking. It begins again.\n\nGain +${g} Ω (spend it on permanent Ω upgrades in COSMOS). Everything resets — including Bitter Lessons (automation lessons, cards, achievements, Insights, building levels, the Board and the Shoggoth stay).\n\nChoose the physics of your next universe:`,
+      choices: offers.map((u) => ({ label: u.name.toUpperCase(), sub: u.desc, fn: () => { G.Sim.omegaPrestige(u.id); G.Main.save(); } })),
+      buttons: [{ label: 'NOT YET', cls: 'bigbtn alt' }],
     });
   };
 
