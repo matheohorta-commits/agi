@@ -186,7 +186,7 @@ input[type=range]:disabled::-webkit-slider-thumb { background: var(--dimmer); }
 /* ------------------------------------------------------------------ center tabs */
 #center { min-width: 0; }
 #tabs { display: flex; gap: 3px; flex-wrap: wrap; }
-.tab { font-family: var(--font-ui); font-size: 11px; padding: 7px 10px 6px; background: var(--panel); color: var(--dim); border: 2px solid var(--line); border-bottom: none; cursor: pointer; position: relative; top: 2px; }
+.tab { font-family: var(--font-ui); font-size: 10px; padding: 7px 7px 6px; background: var(--panel); color: var(--dim); border: 2px solid var(--line); border-bottom: none; cursor: pointer; position: relative; top: 2px; }
 .tab:hover { color: #fff; }
 .tab.on { background: var(--panel2); color: #fff; border-color: var(--accent); z-index: 2; }
 .tab.locked { display: none; }

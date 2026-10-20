@@ -1410,7 +1410,7 @@
       sc.appendChild(grid);
       page.appendChild(sc);
       this.chartAcc = 99;
-      const s = section('ACHIEVEMENTS', 'Each achievement: +1% compute, revenue and research.');
+      const s = section('ACHIEVEMENTS', 'Each achievement: +1% compute, revenue and research, and +4% Hype for your Influencers (STRATEGY).');
       this.ach = h('div.upgrades');
       s.appendChild(this.ach);
       page.appendChild(s);

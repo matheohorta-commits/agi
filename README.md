@@ -53,13 +53,27 @@ multiplier (1.5× → 3× → 10× → 50×), China waking up, the stolen weight
 Eliezer, Beff Jezos, r/singularity, Hacker News... Some posts are interactive mini-events — **RATIO** Gary, **DEBATE** Yann,
 **PATCH** Pliny's jailbreak, **WATCH** for Jimmy's leak (a guaranteed crate), **FIX** an outage.
 
-**Random drops.** Things float across the screen: 🍓 (FEEL THE AGI frenzy ×7), 🍎 leaks, GPU shipments, funding rounds, viral demos,
-eureka moments — and **Lore Crates**.
+**Random drops & combos.** Things float across the screen: 🍓 FEEL THE AGI (revenue ×7), ⚡ Click Storm (clicks ×777),
+Supply Boom, 🪙 Lucky rounds (15% of your bank, capped at 15 minutes of revenue — keep cash), 🍎 leaks, GPU shipments, viral demos,
+eureka moments and **Lore Crates**. Buffs multiply each other; the COMBO badge in the HUD shows the stack. The **news ticker** under the
+HUD runs era-aware headlines; 🍎 LEAK headlines are clickable.
 
 **Lore Crates — HOLD TO OPEN.** A pixel card-reveal homage: brick wall and torches, a locked card with a breathing ring, hold to charge
 (shake, cracks, lightning), burst (flash, shockwave, bricks exploding and piling up), rarity title slam, card flip, NEW!/×N badge,
 coins raining, DRAW ANOTHER. 130+ collectible cards (people, memes, papers, events, movements: e/acc, EA, d/acc, PauseAI, decels,
 LessWrong, r/singularity) across COMMON → RARE → EPIC → LEGENDARY → SINGULAR, with levels and set bonuses.
+
+**Optimize like Cookie Clicker (STRATEGY tab).**
+- **★ BEST VALUE** badges, share-of-total, time-to-afford and ×2-milestone bars on every shop row.
+- **Synergies**: 20 building pairs that boost each other once you own enough of both.
+- **Hype & Influencers**: achievements build Hype (4% each); influencers turn it into stacking revenue multipliers.
+- **◆ Insights**: one every 20 minutes of play (offline too) — spend them on permanent building levels (+5% each).
+  Level 1 of three special buildings opens the next systems:
+- **Board of Advisors**: 3 seats at 100/50/25% strength, 12 advisors (Jensen, Sam, Dario, Demis, Yann, Ilya, Andrej, Satya,
+  Elon, roon, Jimmy Apples, Gary Marcus), each with an upside and a downside; swaps regenerate.
+- **The Shoggoth**: feed it to reveal 12 auras; pick which one it radiates.
+- **GPU Exchange**: 8 parody AI stocks with hidden moods, brokers and share caps. $1 of stock = 1 s of your current revenue,
+  so selling during a buff pays more.
 
 **Prestige.** *The Bitter Lesson* resets a run for Bitter Lessons: permanent multipliers, automation (auto-buy, auto-train, auto-research,
 auto-hire), head starts and more. Pick a different lab each run — 8 labs with different perks (Anthropic and OpenAI from the start;
@@ -70,9 +84,16 @@ DeepMind, xAI, Meta, DeepSeek, Mistral and SSI unlock later).
 and reach ASI to earn a permanent reward. **Abilities** (vaguepost, crunch time, fundraise, launch event, red-team sprint, all-hands)
 give you active cooldown plays on top of the idle loop.
 
-**After ASI.** The game changes: the scene goes from the garage to a datacenter, a gigawatt campus, Earth from orbit, a Dyson swarm, the galaxy.
-Megaprojects (robot economy, disassembling Mercury, von Neumann probes, galactic network, black hole engines, intergalactic seeding) lead to the
-**Omega Point** — a second prestige layer. The aligned and misaligned endings have different flavor, music and palette.
+**After ASI — the long game.** The scene goes from the garage to a datacenter, a gigawatt campus, Earth from orbit, a Dyson swarm,
+the galaxy. In COSMOS you harvest energy as **joules** and spend them on **Cosmic Structures** (Solar Skins, Replicator Foundries,
+Matrioshka Shells, Stellar Lifters, Probe Shipyards, Wormhole Gates, Black Hole Forges, Zero-Point Engines) or save them for the next
+of **11 megaprojects** (Robot Economy → Mercury → Jupiter Brain → Von Neumann Probes → Local Bubble → Galactic Network → Halo Harvest →
+Black Hole Engines → Intergalactic Seeding → the Great Attractor → **the Omega Point**). Star systems are the clock: expansion speed comes
+from what you build. The aligned and misaligned endings have different flavor, music and palette.
+
+**The Omega Point.** A second prestige layer: begin a new universe for Ω (more if you harvest more energy first), spend Ω on 8 permanent
+**Ω upgrades**, and choose the next universe's physics from three offers (Bright, Dense, Dataverse, Hype, Golden, Cold, Fertile, Ancient,
+Mirror...). Insights, building levels, the Board, the Shoggoth, cards and achievements carry over.
 
 **Everything is procedural**: pixel art (ASCII sprites + portrait generator), chiptune music and SFX (WebAudio), particles.
 Fonts are SIL OFL (Press Start 2P, Silkscreen, Jersey 10, VT323).
@@ -89,12 +110,14 @@ Fonts are SIL OFL (Press Start 2P, Silkscreen, Jersey 10, VT323).
 index.html            entry point
 css/style.css         pixel UI
 js/util.js            formatting, math, rng, event bus, DOM helpers
-js/data/*.js          all content & balance: labs, hardware, research, products, cards, story (AI 2027), feed, achievements, cosmos
+js/data/*.js          all content & balance: labs, hardware, research, products, cards, story (AI 2027), feed, ticker,
+                      achievements, cosmos (structures, megaprojects, Ω upgrades, universes), strategy (synergies, advisors, auras, stocks)
 js/core/state.js      save/load/migrate/export
 js/core/calc.js       derived stats: scaling law, economy, alignment, R&D multiplier
 js/core/sim.js        simulation tick + every player action (no DOM — runs headless)
+js/core/strategy.js   synergies, influencers, insights & levels, the Board, the Shoggoth, the GPU Exchange
 js/gfx/*.js           sprites, lab scene, FX, crate opening, audio
-js/ui/*.js            panels, tabs, modals
+js/ui/*.js            panels, tabs, modals, the STRATEGY tab
 js/main.js            bootstrap + main loop + offline progress
 tools/balance.js      headless bot that plays the game and prints a pacing timeline
 electron/main.js      desktop wrapper
@@ -104,8 +127,9 @@ electron/main.js      desktop wrapper
 
 `node tools/balance.js [hours] [lab] [clicksPerSecond] [-v]` plays the game with a heuristic bot and prints when each capability
 milestone, prestige and ASI happen. Override any constant from `js/data/balance.js` with the `BAL` env var, e.g.
-`BAL='{"BL_EXP":0.4}' node tools/balance.js 16`. A good bot reaches ASI in ~5 h across ~7 prestiges; expect roughly 8–12 h for a human
-player, then the cosmic layer and Omega loops.
+`BAL='{"BL_EXP":0.4}' node tools/balance.js 16` (and `STRAT=...` for js/data/strategy.js; `NOSTRAT=1` makes the bot ignore the
+optimization layer). The bot reaches ASI in ~6.4 h when it uses the STRATEGY systems (~9 h when it ignores them), then spends ~3.7 h
+expanding through the cosmos to the first Omega Point; later universes take ~2–2.5 h each. Expect roughly 2–3× that for a human.
 
 ## Shipping on Steam (notes)
 

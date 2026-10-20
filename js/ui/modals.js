@@ -266,10 +266,12 @@
 <p><b>3. Split your compute.</b> Training makes better models. Serving earns money from users (bigger models and longer reasoning cost more per user). Later, AI R&D and alignment copies of your model do research for you.</p>
 <p><b>4. Research.</b> Hire researchers (TEAM) for RP. The Transformer, RLHF, Chain-of-Thought, 🍓 Strawberry, agents... each unlocks a new scaling axis.</p>
 <p><b>5. Stay aligned.</b> Past capability 160, alignment must keep up. A low safety margin causes incidents and builds hidden misalignment — which decides your ending at superintelligence.</p>
-<p><b>6. Grab drops.</b> Things float across the screen: 🍓 strawberries (FEEL THE AGI frenzy), 🍎 leaks, GPU shipments, funding, viral demos and <b>Lore Crates</b> — HOLD TO OPEN for collectible cards that boost everything.</p>
-<p><b>7. React to the timeline.</b> Ratio Gary Marcus, debate Yann, patch Pliny's jailbreaks, watch for Jimmy Apples' leaks.</p>
-<p><b>8. Learn the Bitter Lesson.</b> Past capability ~187, reset for Bitter Lessons: permanent multipliers and automation. Each run goes further.</p>
-<p><b>9. Reach ASI at capability 500.</b> Then the game changes: Dyson swarms, von Neumann probes, the galaxy — and the Omega Point.</p>`,
+<p><b>6. Grab drops & build combos.</b> Things float across the screen: 🍓 strawberries (FEEL THE AGI: ×7 revenue), ⚡ Click Storms (clicks ×777 — click fast!), Supply Booms, 🪙 Lucky rounds (15% of your bank, so keep cash), leaks, GPU shipments and <b>Lore Crates</b> (HOLD TO OPEN for collectible cards). Buffs multiply each other — watch the COMBO badge. 🍎 headlines in the news ticker are clickable too.</p>
+<p><b>7. Optimize (STRATEGY tab).</b> ★ BEST VALUE marks the best output-per-$ buy in each shop. <b>Synergies</b> make pairs of buildings boost each other. Achievements build <b>Hype</b>; <b>Influencers</b> turn Hype into revenue. ◆ <b>Insights</b> form every 20 minutes: spend them on permanent building levels — level 1 of Research Scientists, Interpretability Researchers and DGX A100s opens the <b>Board of Advisors</b>, <b>the Shoggoth</b> (auras) and the <b>GPU Exchange</b> (buy low, sell high — $1 of stock = 1 s of revenue).</p>
+<p><b>8. React to the timeline.</b> Ratio Gary Marcus, debate Yann, patch Pliny's jailbreaks, watch for Jimmy Apples' leaks.</p>
+<p><b>9. Learn the Bitter Lesson.</b> Past capability ~187, reset for Bitter Lessons: permanent multipliers and automation. Insights, building levels, the Board and the Shoggoth survive the reset. Each run goes further.</p>
+<p><b>10. Reach ASI at capability 500 — then keep going.</b> In COSMOS, harvest energy as joules, build Cosmic Structures, and push through 11 megaprojects from the Robot Economy to the Galactic Network and the Great Attractor. Star systems are the clock: explore, build shipyards, expand.</p>
+<p><b>11. The Omega Point.</b> Begin a new universe for Ω (more if you harvest more first): spend it on permanent Ω upgrades and choose the next universe's physics (Bright, Dense, Golden, Cold...). Every loop is faster — and different.</p>`,
       buttons: [{ label: 'GOT IT' }],
     });
   };
