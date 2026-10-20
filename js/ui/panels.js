@@ -255,6 +255,16 @@
       }
       x.stroke();
     }
+    // a loss spike / NaN in progress: a red jag at the current step
+    if (tr.inc && (tr.inc.type === 'spike' || tr.inc.type === 'nan')) {
+      const X = Math.max(2, p * w), Y0 = ly(G.Sim.trainingLoss(tr, Math.max(0.002, p)));
+      x.strokeStyle = '#ff4d6d';
+      x.lineWidth = 2;
+      x.beginPath();
+      x.moveTo(X - 6, Y0); x.lineTo(X - 3, Y0 - hh * 0.25); x.lineTo(X, Y0 - hh * 0.12); x.lineTo(X + 2, tr.inc.type === 'nan' ? 0 : Y0 - hh * 0.55);
+      x.stroke();
+      if (tr.inc.type === 'nan') { x.fillStyle = '#ff4d6d'; x.font = '8px Silkscreen, monospace'; x.fillText('NaN', Math.min(w - 22, X + 4), 18); }
+    }
     x.fillStyle = '#9a96c8';
     x.font = '8px Silkscreen, monospace';
     x.fillText('loss ' + G.Sim.trainingLoss(tr, p).toFixed(3), 4, 10);
@@ -345,6 +355,7 @@
     const w = G.FEED_WHO[p.who] || G.FEED_WHO.news;
     let name = w.name, handle = w.handle;
     if (p.who === 'you') { name = G.LABS[G.S.lab].name; handle = '@' + G.LABS[G.S.lab].short.toLowerCase(); }
+    if (p.who === 'ai' && p.name) { name = p.name; handle = '@' + String(p.name).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 18); }
     const ago = h('span.ago');
     const el = h('div.post' + (p.mini ? '.mini' : '') + (w.reddit ? '.reddit' : '') + (w.sys ? '.sys' : ''), { id: 'post-' + p.id, style: { '--nc': w.color || '#fff' } },
       h('img.av', { src: avatar(p.who) }),

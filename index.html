@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>FEEL THE AGI</title>
   <meta name="description" content="An idle game about scaling laws, compute, and the race to superintelligence.">
-  <link rel="stylesheet" href="css/style.css?v=15">
+  <link rel="stylesheet" href="css/style.css?v=16">
 </head>
 <body class="era-0">
   <div id="bg"></div>
@@ -47,7 +47,7 @@
           <div id="abilities"></div>
         </div>
         <div class="panel" id="modelPanel">
-          <div class="ptitle"><img data-sprite="orb" data-scale="1">DEPLOYED MODEL<span class="grow"></span><span id="rankBadge">#?</span></div>
+          <div class="ptitle"><img data-sprite="orb" data-scale="1">DEPLOYED MODEL<span class="grow"></span><span id="trustBadge" style="display:none">♥ 50</span><span id="rankBadge">#?</span></div>
           <div class="body">
             <div id="capRing"><div id="capBig">0<small>CAPABILITY</small></div></div>
             <div class="mi">
@@ -63,6 +63,7 @@
           <div class="body">
             <div class="pbar"><i id="trainBar" style="width:0%"></i><span id="trainPct">IDLE</span></div>
             <button class="bigbtn green" id="quickTrain">▶ TRAIN</button>
+            <button class="bigbtn red" id="incBtn">⚠</button>
             <canvas id="lossMini" width="300" height="54"></canvas>
           </div>
         </div>
@@ -82,6 +83,13 @@
           <div class="body">
             <div class="gauge"><div class="garc"></div><i id="vibeKnob"></i><span class="gl">OVER</span><span class="gr">BACK</span></div>
             <div class="vibeinfo"><span class="k">THE VIBES</span><b id="vibeText">neutral</b><span id="vibeNum" class="tiny"></span></div>
+          </div>
+        </div>
+        <div class="panel" id="bubblePanel" style="display:none">
+          <div class="body">
+            <div class="bub"><i id="bubBall"></i></div>
+            <div class="bubinfo"><span class="k" id="bubK">INVESTOR BUBBLE</span><b id="bubVal">$0</b><span id="bubRisk" class="tiny"></span></div>
+            <div class="bubact"><button class="btn" id="bubPop">CASH OUT</button><select id="bubAuto"></select></div>
           </div>
         </div>
         <div class="panel" id="buffPanel" style="display:none"><div class="ptitle"><img data-sprite="spark" data-scale="1">ACTIVE EFFECTS<span class="grow"></span><span id="buffMult" class="tiny"></span></div><div class="pad" id="buffs"></div></div>
@@ -113,35 +121,38 @@
   <div id="intro"></div>
 
   <!-- ?v= forces browsers / local servers to load matching files after an update: bump it (and FTAGI_BUILD) when shipping changes -->
-  <script>window.FTAGI_BUILD = '15';</script>
-  <script src="js/util.js?v=15"></script>
-  <script src="js/data/balance.js?v=15"></script>
-  <script src="js/data/labs.js?v=15"></script>
-  <script src="js/data/buildings.js?v=15"></script>
-  <script src="js/data/research.js?v=15"></script>
-  <script src="js/data/products.js?v=15"></script>
-  <script src="js/data/cards.js?v=15"></script>
-  <script src="js/data/story.js?v=15"></script>
-  <script src="js/data/feed.js?v=15"></script>
-  <script src="js/data/ticker.js?v=15"></script>
-  <script src="js/data/achievements.js?v=15"></script>
-  <script src="js/data/cosmos.js?v=15"></script>
-  <script src="js/data/objectives.js?v=15"></script>
-  <script src="js/data/strategy.js?v=15"></script>
-  <script src="js/core/state.js?v=15"></script>
-  <script src="js/core/calc.js?v=15"></script>
-  <script src="js/core/sim.js?v=15"></script>
-  <script src="js/core/strategy.js?v=15"></script>
-  <script src="js/gfx/sprites.js?v=15"></script>
-  <script src="js/gfx/audio.js?v=15"></script>
-  <script src="js/gfx/scene.js?v=15"></script>
-  <script src="js/gfx/fx.js?v=15"></script>
-  <script src="js/gfx/pack.js?v=15"></script>
-  <script src="js/ui/ui.js?v=15"></script>
-  <script src="js/ui/panels.js?v=15"></script>
-  <script src="js/ui/tabs.js?v=15"></script>
-  <script src="js/ui/strategy.js?v=15"></script>
-  <script src="js/ui/modals.js?v=15"></script>
-  <script src="js/main.js?v=15"></script>
+  <script>window.FTAGI_BUILD = '16';</script>
+  <script src="js/util.js?v=16"></script>
+  <script src="js/data/balance.js?v=16"></script>
+  <script src="js/data/labs.js?v=16"></script>
+  <script src="js/data/buildings.js?v=16"></script>
+  <script src="js/data/research.js?v=16"></script>
+  <script src="js/data/products.js?v=16"></script>
+  <script src="js/data/cards.js?v=16"></script>
+  <script src="js/data/story.js?v=16"></script>
+  <script src="js/data/feed.js?v=16"></script>
+  <script src="js/data/ticker.js?v=16"></script>
+  <script src="js/data/achievements.js?v=16"></script>
+  <script src="js/data/cosmos.js?v=16"></script>
+  <script src="js/data/objectives.js?v=16"></script>
+  <script src="js/data/strategy.js?v=16"></script>
+  <script src="js/data/systems.js?v=16"></script>
+  <script src="js/core/state.js?v=16"></script>
+  <script src="js/core/calc.js?v=16"></script>
+  <script src="js/core/sim.js?v=16"></script>
+  <script src="js/core/strategy.js?v=16"></script>
+  <script src="js/core/systems.js?v=16"></script>
+  <script src="js/gfx/sprites.js?v=16"></script>
+  <script src="js/gfx/audio.js?v=16"></script>
+  <script src="js/gfx/scene.js?v=16"></script>
+  <script src="js/gfx/fx.js?v=16"></script>
+  <script src="js/gfx/pack.js?v=16"></script>
+  <script src="js/ui/ui.js?v=16"></script>
+  <script src="js/ui/panels.js?v=16"></script>
+  <script src="js/ui/tabs.js?v=16"></script>
+  <script src="js/ui/strategy.js?v=16"></script>
+  <script src="js/ui/systems.js?v=16"></script>
+  <script src="js/ui/modals.js?v=16"></script>
+  <script src="js/main.js?v=16"></script>
 </body>
 </html>

@@ -511,7 +511,7 @@
     UI.showTab(UI.current);
     fitTabs();
   };
-  const TAB_ICON = { compute: 'chip', data: 'book', train: 'brain', research: 'flask', team: 'crowd', strategy: 'chess', products: 'rocket', cards: 'crate', race: 'trophy', lessons: 'scroll', cosmos: 'galaxy', stats: 'magnifier' };
+  const TAB_ICON = { grid: 'datacenter', policy: 'globe', compute: 'chip', data: 'book', train: 'brain', research: 'flask', team: 'crowd', strategy: 'chess', products: 'rocket', cards: 'crate', race: 'trophy', lessons: 'scroll', cosmos: 'galaxy', stats: 'magnifier' };
   const canBuy = (kind, list) => list.filter((it) => G.Sim.unlocked(it.req) && G.S.money >= G.Sim.price(kind, it.id, 1)).length;
   const canUpg = (kinds) => G.BUILDING_UPGRADES.filter((u) => kinds.includes(u.kind) && G.Sim.upgradeAvailable(u) && G.S.money >= G.Sim.upgradeCost(u)).length;
   /** how many things on each tab you can afford right now (Cookie Clicker-style "buy me" counters) */
@@ -524,6 +524,14 @@
     strategy: () => G.SYNERGIES.filter((sy) => G.Sim.synAvailable(sy) && G.S.money >= G.Sim.synCost(sy)).length + G.INFLUENCERS.filter((f) => G.Sim.inflAvailable(f) && G.S.money >= f.cost).length,
     cosmos: () => (G.S.cosmos ? G.COSMIC_STRUCTS.filter((st) => G.Sim.structUnlocked(st) && G.S.cosmos.joules >= G.Sim.structCost(st, 1)).length : 0),
     cards: () => G.Sim.totalPacks(),
+    grid: () => {
+      // how many more modules you could place right now (each costs more than the last)
+      const g = G.S.grid, free = g.cells.filter((c) => !c).length;
+      const cheap = G.GRID_MODULES.reduce((a, m) => (m.k < a.k ? m : a));
+      let n = 0, money = G.S.money, placed = G.Sim.gridPlaced();
+      while (n < free && n < 99) { const c = G.Sim.gridCost(cheap, placed + n); if (c > money) break; money -= c; n++; }
+      return n;
+    },
   };
   let badgeSig = '';
   UI.updateTabBadges = () => {

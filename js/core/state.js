@@ -10,6 +10,7 @@
       miniWins: 0, miniById: {}, rank1Streak: 0, playTime: 0, maxHwOwned: 0, efficientModel: false, asiCount: 0,
       chinchillaRun: false, overtrained: false, undertrained: false, strawberryDrops: 0, longestOffline: 0,
       bestCapEver: 0, incidents: 0, leaks: 0, stormClicks: 0, maxCombo: 1, marketProfitSec: 0,
+      incManual: 0, incMissed: 0, incSeen: 0, poached: 0, pops: 0, bursts: 0, bestBubble: 0,
     };
   }
 
@@ -85,6 +86,13 @@
       board: { chair: null, board: null, advisor: null, swaps: 3, t: 0 },
       shog: { level: 0, auras: [] },
       market: { stocks: [], brokers: 0, t: 0, profit: 0 },
+      // v4 systems (systems.js). grid/talent/bubble/trainOps reset each run; policy & voice are world/lineage state
+      grid: { unlocked: false, w: 6, h: 4, cells: new Array(24).fill(null), bp: null, expansions: 0 },
+      talent: { team: [], offers: [], rivals: {}, nextOffer: 120, nextRaid: 450, alert: null },
+      bubble: { v: 0, age: 0, winter: 0, pops: 0, auto: 2 },
+      policy: { inf: 0, laws: {}, lobbies: 0 },
+      voice: { trust: 50, choices: {}, flags: {}, next: 90, selfName: null },
+      trainOps: { sre: 0, cd: 0 },
     };
     const lab = G.LABS[s.lab];
     if (lab && lab.start) {
@@ -129,6 +137,14 @@
     if (old.board) s.board = old.board;
     if (old.shog) s.shog = old.shog;
     if (old.market) { s.market.brokers = old.market.brokers || 0; s.market.profit = old.market.profit || 0; }
+    // v4 systems: the hall is rebuilt from a blueprint of the last layout; laws and your model lineage persist
+    if (old.grid) {
+      s.grid.unlocked = !!old.grid.unlocked;
+      s.grid.bp = Array.isArray(old.grid.cells) && old.grid.cells.some(Boolean) ? { w: old.grid.w, h: old.grid.h, cells: old.grid.cells.slice() } : old.grid.bp || null;
+    }
+    if (old.policy) s.policy = { inf: old.policy.inf || 0, laws: old.policy.laws || {}, lobbies: 0 };
+    if (old.voice) s.voice = Object.assign(s.voice, { trust: old.voice.trust, choices: old.voice.choices || {}, flags: old.voice.flags || {}, selfName: old.voice.selfName || null });
+    if (old.bubble) s.bubble.auto = old.bubble.auto;
   }
 
   /* ------------------------------------------------------------------ save repair
@@ -137,7 +153,8 @@
    * expects, or it is reset (and reported) instead of crashing training / the UI later. */
   const typeOf = (v) => (Array.isArray(v) ? 'array' : v === null ? 'null' : typeof v);
   // objects with a fixed set of keys (repaired recursively); everything else is a free-form map
-  const SHAPED = new Set(['stats', 'settings', 'auto', 'trainCfg', 'alloc', 'run', 'prestige', 'omega', 'packs', 'insight', 'board', 'shog', 'market']);
+  const SHAPED = new Set(['stats', 'settings', 'auto', 'trainCfg', 'alloc', 'run', 'prestige', 'omega', 'packs', 'insight', 'board', 'shog', 'market',
+    'grid', 'talent', 'bubble', 'policy', 'voice', 'trainOps']);
   const NUM_MAPS = ['hw', 'power', 'res', 'safety', 'src', 'repeat', 'cards', 'packs', 'storyCd', 'cds', 'levels']; // id → count/level/time
   const NULLABLE = { training: 'object', mini: 'object', cosmos: 'object', challenge: 'object', ending: 'string' };
   const finite = (x) => typeof x === 'number' && isFinite(x);
@@ -196,6 +213,34 @@
         if (typeOf(c.structs) !== 'object') c.structs = {};
         for (const id in c.structs) if (!finite(c.structs[id])) { fixed.push('cosmos.structs.' + id); delete c.structs[id]; }
       }
+    }
+    // v4 systems
+    {
+      const Y = G.SYS || {}, g = s.grid;
+      const okDim = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
+      const okCell = (c) => c === null || (G.GRID_MODULES || []).some((m) => m.id === c);
+      if (!okDim(g.w, 1, Y.GRID_WMAX || 12) || !okDim(g.h, 1, Y.GRID_HMAX || 8) || !Array.isArray(g.cells) || g.cells.length !== g.w * g.h || !g.cells.every(okCell)) {
+        fixed.push('grid'); s.grid = Object.assign(fresh.grid, { unlocked: !!g.unlocked });
+      }
+      const bp = s.grid.bp;
+      if (bp !== null && !(typeOf(bp) === 'object' && okDim(bp.w, 1, 12) && okDim(bp.h, 1, 8) && Array.isArray(bp.cells) && bp.cells.length === bp.w * bp.h && bp.cells.every(okCell))) { fixed.push('grid.bp'); s.grid.bp = null; }
+      const star = (id) => (G.STARS || []).some((x) => x.id === id);
+      const t = s.talent;
+      const team = t.team.filter((m) => typeOf(m) === 'object' && star(m.id) && finite(m.loyalty));
+      if (team.length !== t.team.length) { fixed.push('talent.team'); t.team = team; }
+      const offers = t.offers.filter((o) => typeOf(o) === 'object' && star(o.id) && finite(o.left) && finite(o.cost));
+      if (offers.length !== t.offers.length) { fixed.push('talent.offers'); t.offers = offers; }
+      for (const id in t.rivals) if (!star(id) || !G.LABS[t.rivals[id]]) { fixed.push('talent.rivals.' + id); delete t.rivals[id]; }
+      if (t.alert !== null && !(typeOf(t.alert) === 'object' && star(t.alert.id) && G.LABS[t.alert.rival])) { fixed.push('talent.alert'); t.alert = null; }
+      for (const id in s.policy.laws) {
+        const L = (G.LAWS || []).find((x) => x.id === id);
+        if (!L || !Number.isInteger(s.policy.laws[id]) || !L.options[s.policy.laws[id]]) { fixed.push('policy.laws.' + id); delete s.policy.laws[id]; }
+      }
+      s.voice.trust = Math.min(100, Math.max(0, s.voice.trust));
+      if (s.voice.selfName !== null && typeof s.voice.selfName !== 'string') s.voice.selfName = null;
+      const tr2 = s.training;
+      if (tr2 && tr2.inc !== undefined && tr2.inc !== null && !(typeOf(tr2.inc) === 'object' && (G.TRAIN_INCIDENTS || []).some((x) => x.id === tr2.inc.type) && finite(tr2.inc.left))) { fixed.push('training.inc'); tr2.inc = null; }
+      if (tr2 && tr2.penalty !== undefined && !finite(tr2.penalty)) tr2.penalty = 0;
     }
     // rivals are regenerated by Sim.set() when empty
     if (Object.values(s.rivals).some((r) => typeOf(r) !== 'object' || !finite(r.cap) || !finite(r.next))) { fixed.push('rivals'); s.rivals = {}; }

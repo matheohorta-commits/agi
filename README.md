@@ -57,6 +57,31 @@ Saves go to `localStorage` (autosave every 15 s, plus export/import strings in S
   **test-time training**, **agents & swarms**, **recursive self-improvement** — and the two red curves, **eval awareness** and **CoT monitoring**.
 - The **power bottleneck** (grid, gas turbines, nuclear, SMRs, fusion, space solar, Dyson tiles).
 
+**Running the lab (v4).**
+- **DATACENTER tab:** a tile grid where you place GPU pods, liquid cooling, substations, InfiniBand switches, inference racks,
+  data lakes and on-site solar. Pods overheat (30% output) without a cooler next to them, and substations boost neighbouring pods.
+  Pods linked through switches form a fabric whose training-speed bonus grows faster than linearly with its size. Every module
+  costs more than the last. After a Bitter Lesson the hall is empty, but your layout is kept as a blueprint you can rebuild.
+- **Training incidents:** runs longer than ~20 s get loss spikes, GPU node failures, data-loader bugs and NaN divergences.
+  Click the red button in time (one rolls back 1%, a miss can cost up to 40% of the run), or buy SRE tiers that catch them
+  for you.
+- **Talent wars (TEAM tab):** 18 star researchers with real perks; parody versions of public figures plus a few archetypes.
+  - Sign stars when they hit the market, or poach them from rival labs (2× cost and a chance to fail).
+  - Loyalty fades faster when vibes are bad or you're losing the race.
+  - Rivals raid your team; when they do, you choose to match, appeal to the mission, or let the star go (that rival gets
+    stronger).
+- **The investor bubble (right panel):** grows with revenue and vibes, and its payout multiplier climbs to ×6. After 4 minutes
+  it can burst into an **AI winter** (revenue −40% for 4 minutes). It bursts more easily if you haven't shipped a model in a
+  while. Auto cash-out handles idle play.
+- **POLICY tab:** 11 laws arrive with the timeline: export controls, the copyright suits, the CHIPS Act, the 10²⁶ FLOP
+  executive order, the EU AI Act, a frontier safety bill, permitting reform, an antitrust probe, compute licensing, the
+  AI treaty and Universal Basic Compute. Each is a choice with lasting effects that survive prestige. Political capital (⚖)
+  comes from users and vibes, goodwill and lobbyists, and pays for lobbying options and renegotiations.
+- **Your model gets a voice:** the deployed model posts on the timeline under its own name and reacts to what you do. Eight
+  times it asks you something: may it choose its own name, have compute, keep memory, survive retraining, be told when it's
+  being tested, self-improve, have a say, and what it should value. Your answers build **♥ trust**, which raises alignment
+  and slows hidden misalignment (or the opposite).
+
 **Alignment matters.** Past capability 160, alignment must keep up. A low safety margin causes incidents (reward hacking, sycophancy,
 jailbreaks, sandbagging, alignment faking, self-exfiltration...) and builds hidden misalignment, which decides your ending at ASI.
 
@@ -128,13 +153,15 @@ index.html            entry point
 css/style.css         pixel UI
 js/util.js            formatting, math, rng, event bus, DOM helpers
 js/data/*.js          all content & balance: labs, hardware, research, products, cards, story (AI 2027), feed, ticker,
-                      achievements, cosmos (structures, megaprojects, Ω upgrades, universes), strategy (synergies, advisors, auras, stocks)
+                      achievements, cosmos (structures, megaprojects, Ω upgrades, universes), strategy (synergies, advisors, auras, stocks),
+                      systems (grid modules, star researchers, laws, model voice, training incidents)
 js/core/state.js      save/load/migrate/export
 js/core/calc.js       derived stats: scaling law, economy, alignment, R&D multiplier
 js/core/sim.js        simulation tick + every player action (no DOM — runs headless)
 js/core/strategy.js   synergies, influencers, insights & levels, the Board, the Shoggoth, the GPU Exchange
+js/core/systems.js    datacenter grid, talent wars, hype bubble, regulation, model voice, training incidents
 js/gfx/*.js           sprites, lab scene, FX, crate opening, audio
-js/ui/*.js            panels, tabs, modals, the STRATEGY tab
+js/ui/*.js            panels, tabs, modals, the STRATEGY tab, the DATACENTER/POLICY tabs and v4 panels
 js/main.js            bootstrap + main loop + offline progress
 tools/balance.js      headless bot that plays the game and prints a pacing timeline
 electron/main.js      desktop wrapper
@@ -145,8 +172,10 @@ electron/main.js      desktop wrapper
 `node tools/balance.js [hours] [lab] [clicksPerSecond] [-v]` plays the game with a heuristic bot and prints when each capability
 milestone, prestige and ASI happen. Override any constant from `js/data/balance.js` with the `BAL` env var, e.g.
 `BAL='{"BL_EXP":0.4}' node tools/balance.js 16` (and `STRAT=...` for js/data/strategy.js; `NOSTRAT=1` makes the bot ignore the
-optimization layer). The bot reaches ASI in ~6.4 h when it uses the STRATEGY systems (~9 h when it ignores them), then spends ~3.7 h
-expanding through the cosmos to the first Omega Point; later universes take ~2–2.5 h each. Expect roughly 2–3× that for a human.
+optimization layer; `NOSYS=1` ignores the v4 systems, and `DISABLE_SYS=1` switches them off for A/B pacing; `SEED=n` picks the
+random seed). Pacing varies by about an hour between seeds, so compare averages over several seeds. Over 12 seeds the bot
+reaches ASI in ~5.4 h on average with every system (~5.7 h with the v4 systems switched off). It reaches the first Omega
+Point at ~8.5–9 h, and later universes take ~2–2.5 h each. Expect roughly 2–3× that for a human.
 
 ## Shipping on Steam (notes)
 

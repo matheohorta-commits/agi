@@ -10,7 +10,7 @@ const ROOT = path.join(__dirname, '..');
 const FILES = [
   'js/util.js', 'js/data/balance.js', 'js/data/labs.js', 'js/data/buildings.js', 'js/data/research.js', 'js/data/products.js',
   'js/data/cards.js', 'js/data/story.js', 'js/data/feed.js', 'js/data/achievements.js', 'js/data/cosmos.js', 'js/data/objectives.js',
-  'js/data/strategy.js', 'js/core/state.js', 'js/core/calc.js', 'js/core/sim.js', 'js/core/strategy.js',
+  'js/data/strategy.js', 'js/data/systems.js', 'js/core/state.js', 'js/core/calc.js', 'js/core/sim.js', 'js/core/strategy.js', 'js/core/systems.js',
 ];
 // deterministic Math.random for reproducible runs (SEED env)
 let seed = parseInt(process.env.SEED || '12345', 10) >>> 0;
@@ -25,9 +25,12 @@ for (const f of FILES) {
   vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), ctx, { filename: f });
   if (f === 'js/data/balance.js' && process.env.BAL) deepMerge(ctx.G.BAL, JSON.parse(process.env.BAL));
   if (f === 'js/data/strategy.js' && process.env.STRAT) deepMerge(ctx.G.STRAT, JSON.parse(process.env.STRAT));
+  if (f === 'js/data/systems.js' && process.env.SYS) deepMerge(ctx.G.SYS, JSON.parse(process.env.SYS));
 }
 const G = ctx.G;
 const U = G.U;
+// DISABLE_SYS=1 turns the v4 systems off entirely (A/B pacing); NOSYS=1 keeps them running but the bot ignores them
+if (process.env.DISABLE_SYS) { G.applySystems = null; G.Sim.tickSystems = () => {}; G.LAWS.length = 0; G.VOICE_REQUESTS.length = 0; G.STORY = G.STORY.filter((e) => !/^(law_|v_|sys_)/.test(e.id)); }
 
 const HOURS = parseFloat(process.argv[2] || '12');
 const LAB = process.argv[3] || 'anthropic';
@@ -191,6 +194,15 @@ function botDecide() {
     }
     S.auto = { hw: true, src: true, power: true, train: false, research: false, hire: true, trainEta: 60, deploy: true };
   }
+  // v4 systems: datacenter grid, star researchers, training ops (laws/model requests take the first option in the story handler)
+  if (!process.env.NOSYS && !process.env.DISABLE_SYS) {
+    if (Sim.sreCost() < S.money * 0.2) Sim.buySRE();
+    if (Sim.gridOpen() && ++gridAcc >= 30) { gridAcc = 0; botGrid(); }
+    if (Sim.talentOpen()) {
+      for (const o of S.talent.offers.slice()) if (!Sim.teamFull() && o.cost < S.money * 0.4) Sim.hireOffer(o.id);
+      for (const m of S.talent.team) { const st = G.STARS.find((x) => x.id === m.id); if (m.loyalty < 60 && Sim.starRetainCost(st) < S.money * 0.2) Sim.retainStar(m.id); }
+    }
+  }
   // cosmos
   if (S.cosmos) {
     const c = S.cosmos;
@@ -228,6 +240,35 @@ function botDecide() {
   }
 }
 
+let gridAcc = 0;
+const gridVal = (e) => e.compute + 0.6 * e.train + 0.2 * e.serve + 0.2 * e.data + (S.flags.power ? 0.3 * e.power : 0);
+function botGrid() {
+  const Sim = G.Sim, g = S.grid, pw = !!S.flags.power;
+  if (Sim.gridBlueprintTodo().length) Sim.gridRebuild();
+  for (let k = 0; k < 12; k++) {
+    const empty = [];
+    g.cells.forEach((c, i) => { if (!c) empty.push(i); });
+    if (!empty.length) {
+      if (Sim.gridCanExpand() && Sim.gridExpandCost() < S.money * 0.3) { Sim.gridExpand(); continue; }
+      break;
+    }
+    const base = gridVal(G.gridEval(g, pw));
+    let best = null, bv = 0;
+    for (const m of G.GRID_MODULES) {
+      if (!Sim.gridModAvailable(m)) continue;
+      const cost = Sim.gridCost(m);
+      if (cost > S.money * 0.3) continue;
+      for (const i of empty) {
+        g.cells[i] = m.id;
+        const v = (gridVal(G.gridEval(g, pw)) - base) / cost;
+        g.cells[i] = null;
+        if (v > bv) { bv = v; best = [i, m.id]; }
+      }
+    }
+    if (!best || !Sim.gridPlace(best[0], best[1])) break;
+  }
+}
+
 const END = HOURS * 3600;
 while (simT < END) {
   G.Sim.tick(DT);
@@ -239,6 +280,7 @@ while (simT < END) {
   while (clickAcc >= 1) { clickAcc--; G.Sim.click(); }
   for (const d of S.drops.slice()) if (Math.random() < 0.02) G.Sim.catchDrop(d.id);
   if (S.mini && Math.random() < 0.05) G.Sim.resolveMini(Math.random() < 0.8);
+  if (S.training && S.training.inc && !process.env.NOSYS && Math.random() < 0.12 * DT) G.Sim.catchTrainInc();
   decideAcc += DT;
   if (decideAcc >= 1) { decideAcc = 0; botDecide(); }
   for (const c of capMarks) {

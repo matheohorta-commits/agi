@@ -95,7 +95,7 @@
         post('news', `${labName(id)} is founded. "Our mission: build safe, beneficial AGI." (Everyone says that.)`);
         continue;
       }
-      r.next -= dt * (tr.aggro || 1);
+      r.next -= dt * (tr.aggro || 1) * (D.M.rivalSpeed || 1) * (id === 'deepseek' ? D.M.rivalSpeedCN || 1 : 1);
       if (r.next > 0) continue;
       r.next = U.rand(80, 190);
       const prog = U.smooth(U.clamp((D.bestCap - 60) / 280, 0, 1));
@@ -318,7 +318,7 @@
     if (!Array.isArray(S.models)) S.models = []; // never let a damaged save block a finished model
     if (!(S.deployed < S.models.length)) S.deployed = -1;
     const R = C.lossR(tr.N, tr.D, tr.kN, tr.kD);
-    const capPre = C.capPre(tr.N, tr.D, tr.kN, tr.kD, tr.arch);
+    const capPre = C.capPre(tr.N, tr.D, tr.kN, tr.kD, tr.arch) * (1 - (tr.penalty || 0)); // missed data-loader bugs
     S.bestN = Math.max(S.bestN || 0, tr.N);
     const lab = G.LABS[S.lab];
     const estCap = capPre + tr.rlBonus + D.capTTC + D.capTTT + D.capAgents + D.M.capFlat;
@@ -628,6 +628,7 @@
       S.forceCrate = true;
       S.nextDrop = Math.min(S.nextDrop, 4);
     }
+    if (o.sys && Sim.sysOutcome) { const t = Sim.sysOutcome(o.sys); if (t) msgs.push(t); }
     if (o.text) msgs.push(o.text);
     Sim.recalc();
     return msgs.join(' ');
@@ -1239,6 +1240,7 @@
     if (!s.flags.asi && D.cap >= B.ASI_CAP) triggerASI();
     tickCosmos(dt);
     if (Sim.tickStrategy) Sim.tickStrategy(dt);
+    if (Sim.tickSystems) Sim.tickSystems(dt);
 
     // once per second
     secAcc += dt;
@@ -1274,12 +1276,15 @@
     const steps = Math.min(2000, Math.max(1, Math.ceil(seconds / 2)));
     const dt = (seconds * eff) / steps;
     const saveDrops = S.nextDrop, saveMini = S.nextMini, saveFeed = S.nextFeed;
-    for (let i = 0; i < steps; i++) {
-      S.nextDrop = 1e9;
-      S.nextMini = 1e9;
-      S.nextFeed = 1e9;
-      Sim.tick(dt);
-    }
+    Sim.ff = true;
+    try {
+      for (let i = 0; i < steps; i++) {
+        S.nextDrop = 1e9;
+        S.nextMini = 1e9;
+        S.nextFeed = 1e9;
+        Sim.tick(dt);
+      }
+    } finally { Sim.ff = false; }
     S.nextDrop = saveDrops;
     S.nextMini = saveMini;
     S.nextFeed = saveFeed;

@@ -138,6 +138,7 @@
       guard('feed', () => G.Panels.updateFeedTimers());
       guard('buffs', () => G.Panels.updateBuffs());
       guard('abilities', () => G.Panels.updateAbilities());
+      guard('systems', () => G.UI.updateSystems());
       guard('tooltip', () => G.UI.refreshTip());
       G.Audio.Music.intensity = U.clamp((S.vibe + 100) / 200, 0, 1);
     }
@@ -202,6 +203,7 @@
     G.UI.initTooltips();
     G.UI.initTop();
     G.UI.initTicker();
+    G.UI.initSystems();
     G.UI.wire();
     G.FX.init();
     G.Scene.init(document.getElementById('sceneCanvas'));

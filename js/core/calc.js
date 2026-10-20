@@ -20,6 +20,7 @@
       cost_cai: 1, cost_chat: 1, cosReplicate: 1, cosEff: 1, cosEnergy: 1,
       capPreMult: 1, misalignRate: 1, noClick: false, noProducts: false, dropPower: 1,
       cosExplore: 1, insightRate: 1, omegaGain: 1, synK: 1,
+      rivalSpeed: 1, rivalSpeedCN: 1, incTrain: 1,
     };
   }
 
@@ -205,6 +206,7 @@
     D.achMult = am;
     applyOmega(s, M, D);
     applyStrategy(s, M, D);
+    if (G.applySystems) G.applySystems(s, M, D);
     // story flags
     if (s.flags.race) M.rdMult *= 2;
     if (s.flags.slowdown) M.ap *= 3;
