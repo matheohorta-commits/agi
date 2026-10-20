@@ -121,6 +121,7 @@
     guard('fx', () => G.FX.update(dt));
     guard('drops', () => G.UI.updateDrops());
     guard('history', () => G.Hist.tick(dt));
+    guard('ticker', () => G.UI.updateTicker(dt));
     uiAcc += dt;
     if (uiAcc > 0.1) {
       uiAcc = 0;
@@ -189,6 +190,7 @@
     G.UI.initSprites();
     G.UI.initTooltips();
     G.UI.initTop();
+    G.UI.initTicker();
     G.UI.wire();
     G.FX.init();
     G.Scene.init(document.getElementById('sceneCanvas'));

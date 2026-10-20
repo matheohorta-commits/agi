@@ -42,18 +42,45 @@
     safety: (it, n, M) => U.fmt(it.ap * (M.safety[it.id] || 1) * M.ap * (n || 1)) + ' AP/s',
     src: (it, n, M) => U.fmt(it.tps * (M.src[it.id] || 1) * M.data * (it.quality || 1) * (n || 1)) + ' tok/s',
   };
+  /** numeric output of ONE more unit (used for value-per-$ and share-of-total) */
+  const UNIT = {
+    hw: (it, M) => it.flops * (M.hw[it.id] || 1) * M.compute,
+    power: (it, M) => it.watts * (M.pow[it.id] || 1) * M.powerCap,
+    res: (it, M) => it.rp * (M.res[it.id] || 1) * M.rp * G.D.rdMult,
+    safety: (it, M) => it.ap * (M.safety[it.id] || 1) * M.ap,
+    src: (it, M) => (it.human && G.D.dataWall ? 0 : it.tps * (M.src[it.id] || 1) * M.data * (it.quality || 1)),
+  };
+  const UNIT_NAME = { hw: 'compute', power: 'power capacity', res: 'research', safety: 'alignment', src: 'data' };
+  UI.unitOut = (kind, it) => UNIT[kind](it, G.D.M);
+  /** ×2 milestone progress for a building: { prev, next } owned counts (next = null when all bought) */
+  function milestone(kind, id, owned) {
+    let prev = 0, next = null;
+    for (const u of G.BUILDING_UPGRADES) {
+      if (u.kind !== kind || u.target !== id) continue;
+      if (u.need <= owned) prev = Math.max(prev, u.need);
+      else if (next === null || u.need < next) next = u.need;
+    }
+    return { prev, next };
+  }
   function buyCount(kind, id) {
     if (UI.buyAmt === 'max') return Math.max(1, G.Sim.maxBuy(kind, id));
     return UI.buyAmt;
   }
-  /** building row */
+  /** building row (Cookie Clicker style: output, share, value badge, time-to-afford, milestone bar) */
   function itemRow(kind, it) {
     const ic = h('img.ic', { src: UI.icon(it.sprite, 3, it.tint) });
     const name = h('div.name', it.name);
+    const lvl = h('span.lvl');
     const prod = h('div.prod');
     const cost = h('div.cost');
+    const eta = h('span.eta');
     const own = h('div.own', '0');
-    const el = h('div.item', ic, h('div', name, prod, cost), own);
+    const best = h('span.best', '★ BEST VALUE');
+    const msBar = h('i');
+    const ms = h('div.ms', msBar);
+    const el = h('div.item', ic, h('div.mid', h('div.nl', name, lvl), prod, h('div.cl', cost, eta)), own, best, ms);
+    el._kind = kind;
+    el._it = it;
     el.addEventListener('click', () => {
       const S = G.S;
       if (!G.Sim.unlocked(it.req)) return;
@@ -73,35 +100,72 @@
       if (!unlocked) s += `<span style="color:var(--red)">🔒 ${reqText(it.req)}</span>`;
       else {
         s += `Each: ${PROD_FMT[kind](it, 1, M)}<br>Owned ${n}: ${PROD_FMT[kind](it, n, M)}`;
+        if (el._share !== undefined) s += ` <span class="tl2">(${U.fmtPct(el._share)} of your ${UNIT_NAME[kind]})</span>`;
         if (kind === 'hw' && G.S.flags.power) s += `<br>Power: ${U.fmtWatts(it.watts)} each${it.watts === 0 ? ' (self-powered!)' : ''}`;
         if (kind === 'src' && it.human && G.D.dataWall) s += '<br><span style="color:var(--red)">Human data exhausted — produces nothing</span>';
         const nb = buyCount(kind, it.id);
-        s += `<br>Buy ${nb}: ${U.fmtMoney(G.Sim.price(kind, it.id, nb))}`;
+        const c = G.Sim.price(kind, it.id, nb);
+        s += `<hr>Buy ${nb}: <b style="color:var(--money)">${U.fmtMoney(c)}</b>`;
+        if (G.S.money < c && G.D.revenue > 0) s += ` · affordable in ${U.fmtTime((c - G.S.money) / G.D.revenue)}`;
+        if (el._value !== undefined) s += `<br>Value: <b style="color:${el._value >= 0.999 ? 'var(--gold)' : 'var(--text)'}">${el._value >= 0.999 ? 'BEST' : U.fmtPct(el._value)}</b> of the best ${UNIT_NAME[kind]}-per-$ buy here`;
+        const m = milestone(kind, it.id, n);
+        if (m.next) s += `<br>Next ×2 upgrade at ${m.next} owned (${n}/${m.next})`;
       }
       return s;
     });
     el._upd = () => {
-      const S = G.S, M = G.D.M;
+      const S = G.S, D = G.D, M = D.M;
       const unlocked = G.Sim.unlocked(it.req);
       U.toggleClass(el, 'locked', !unlocked);
       const n = G.Sim.owned(kind, it.id);
       U.setText(own, n);
+      const lv = G.Sim.buildingLevel ? G.Sim.buildingLevel(kind, it.id) : 0;
+      U.setText(lvl, lv ? 'LV ' + lv : '');
       if (!unlocked) {
         U.setText(prod, reqText(it.req));
         U.setText(cost, '');
+        U.setText(eta, '');
         U.toggleClass(el, 'can', false);
+        msBar.style.width = '0%';
         return;
       }
       const nb = buyCount(kind, it.id);
       const c = G.Sim.price(kind, it.id, nb);
-      U.setText(prod, '+' + PROD_FMT[kind](it, 1, M) + (kind === 'src' && it.human && G.D.dataWall ? ' (WALL)' : ''));
+      const share = el._share;
+      U.setText(prod, '+' + PROD_FMT[kind](it, 1, M) + ' each' + (kind === 'src' && it.human && D.dataWall ? ' (WALL)' : share > 0.001 ? ' · ' + U.fmtPct(share) + ' of total' : ''));
       U.setText(cost, (nb > 1 ? '×' + nb + ' ' : '') + U.fmtMoney(c));
       const can = S.money >= c;
+      U.setText(eta, !can && D.revenue > 0 ? '⏳ ' + U.fmtTime((c - S.money) / D.revenue) : '');
       U.toggleClass(cost, 'no', !can);
       U.toggleClass(el, 'can', can);
       U.toggleClass(el, 'cant', !can);
+      const m = milestone(kind, it.id, n);
+      msBar.style.width = m.next ? U.clamp((n - m.prev) / (m.next - m.prev), 0, 1) * 100 + '%' : '100%';
+      U.toggleClass(ms, 'done', !m.next);
     };
     return el;
+  }
+  /** per-category stats every row needs: value-per-$ relative to the best buy, and share of the category's output */
+  function rateRows(kind, rows) {
+    const M = G.D.M;
+    let best = null, bestV = 0, total = 0;
+    const vals = [];
+    for (const r of rows) {
+      const it = r._it;
+      const n = G.Sim.owned(kind, it.id);
+      const unit = UNIT[kind](it, M);
+      total += unit * n;
+      if (!G.Sim.unlocked(it.req)) { vals.push([r, -1, unit, n]); continue; }
+      const v = unit / Math.max(1e-300, G.Sim.price(kind, it.id, 1));
+      vals.push([r, v, unit, n]);
+      if (v > bestV) { bestV = v; best = r; }
+    }
+    const unlockedN = vals.filter((x) => x[1] >= 0).length;
+    for (const [r, v, unit, n] of vals) {
+      r._value = v >= 0 && bestV > 0 ? v / bestV : undefined;
+      r._share = total > 0 ? (unit * n) / total : 0;
+      U.toggleClass(r, 'best', r === best && unlockedN >= 2 && bestV > 0);
+    }
   }
   function reqText(req) {
     if (!req) return '';
@@ -144,6 +208,7 @@
     refresh();
     box._upd = () => {
       if (visibleList(list).length !== rows.size) refresh();
+      rateRows(kind, [...rows.values()]);
       for (const r of rows.values()) r._upd();
     };
     return box;
@@ -1236,6 +1301,21 @@
       b3.addEventListener('click', () => G.Modals.help());
       row.appendChild(b1); row.appendChild(b2); row.appendChild(b3);
       page.appendChild(row);
+      const sc = section('PROGRESS', 'Sampled every 5 seconds this session. Steeper is better — use it to see which purchases actually moved the needle.');
+      const grid = h('div.histgrid');
+      this.charts = [
+        ['REVENUE', 'rev', '#7dff9a', (v) => U.fmtMoney(Math.pow(10, v)) + '/s'],
+        ['COMPUTE', 'cmp', '#3ee6ff', (v) => U.fmtFlops(Math.pow(10, v))],
+        ['RESEARCH', 'rp', '#c89bff', (v) => U.fmt(Math.pow(10, v)) + ' RP/s'],
+        ['CAPABILITY', 'cap', '#ffe45c', (v) => v.toFixed(1)],
+      ].map(([title, key, col, fmt]) => {
+        const cv = h('canvas', { width: 300, height: 110 });
+        grid.appendChild(h('div.metric', h('div.mt', title), cv));
+        return { cv, key, col, fmt };
+      });
+      sc.appendChild(grid);
+      page.appendChild(sc);
+      this.chartAcc = 99;
       const s = section('ACHIEVEMENTS', 'Each achievement: +1% compute, revenue and research.');
       this.ach = h('div.upgrades');
       s.appendChild(this.ach);
@@ -1253,6 +1333,11 @@
         ['Prestiges', S.prestige.count], ['Superintelligences', st.asiCount], ['Achievements', Object.keys(S.achievements).length + ' / ' + G.ACHIEVEMENTS.length],
       ];
       U.setHTML(this.stats, '<div class="kv">' + rows.map(([k, v]) => `<span class="k">${k}</span><span class="v">${v}</span>`).join('') + '</div>');
+      this.chartAcc += 0.2;
+      if (force || this.chartAcc > 1) {
+        this.chartAcc = 0;
+        for (const c of this.charts) drawHistory(c.cv, G.Hist.data.map((p) => p[c.key]).filter((v) => v !== undefined && isFinite(v)), c.col, c.fmt);
+      }
       const sig = Object.keys(S.achievements).length;
       if (force || sig !== this.sig) {
         this.sig = sig;
@@ -1267,6 +1352,34 @@
     },
   });
 
+  /** labeled line chart of a history series (min/max/now labels, filled area) */
+  function drawHistory(cv, data, col, fmt) {
+    const x = cv.getContext('2d');
+    const w = cv.width, hh = cv.height;
+    x.fillStyle = '#0b0a1a';
+    x.fillRect(0, 0, w, hh);
+    x.font = '8px Silkscreen, monospace';
+    if (data.length < 2) { x.fillStyle = '#6a67a0'; x.fillText('collecting data…', 8, hh / 2); return; }
+    let mn = Math.min(...data), mx = Math.max(...data);
+    if (mx - mn < 1e-6) { mx += 0.5; mn -= 0.5; }
+    const px = (i) => 4 + (i / (data.length - 1)) * (w - 8);
+    const py = (v) => hh - 14 - ((v - mn) / (mx - mn)) * (hh - 30);
+    x.strokeStyle = '#1d1a4a';
+    for (let i = 1; i < 4; i++) { x.beginPath(); x.moveTo(0, (i * hh) / 4 + 0.5); x.lineTo(w, (i * hh) / 4 + 0.5); x.stroke(); }
+    x.beginPath();
+    data.forEach((v, i) => (i ? x.lineTo(px(i), py(v)) : x.moveTo(px(i), py(v))));
+    x.lineTo(px(data.length - 1), hh); x.lineTo(px(0), hh); x.closePath();
+    x.globalAlpha = 0.15; x.fillStyle = col; x.fill(); x.globalAlpha = 1;
+    x.strokeStyle = col; x.lineWidth = 2;
+    x.beginPath();
+    data.forEach((v, i) => (i ? x.lineTo(px(i), py(v)) : x.moveTo(px(i), py(v))));
+    x.stroke();
+    x.fillStyle = col;
+    x.fillText('now ' + fmt(data[data.length - 1]), 6, 11);
+    x.fillStyle = '#6a67a0';
+    x.fillText('low ' + fmt(mn), 6, hh - 3);
+  }
+
   /* ================================================================== history sampler (for charts) */
   G.Hist = {
     data: [],
@@ -1279,6 +1392,7 @@
       this.data.push({
         hw: Math.log10(Math.max(1, D.computeRaw)), ttc: D.capTTC, run: Math.log10(Math.max(1, S.stats.maxRunFlop)), ttt: D.capTTT,
         ag: D.capAgents, rd: D.rdEffective || D.rdMult, ev: D.evalAware, cot: Math.min(1, D.cotMon),
+        rev: Math.log10(Math.max(1, D.revenue)), cmp: Math.log10(Math.max(1, D.compute)), cap: D.cap, rp: Math.log10(Math.max(1, D.rpRate)),
       });
       if (this.data.length > 240) this.data.shift();
     },

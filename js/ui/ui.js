@@ -40,7 +40,22 @@
     straw: () => `<b>STRAWBERRIES 🍓</b><br>Catch 🍓 drops, earn achievements and pull duplicate cards.<br>Spend them on Lore Crates in the CARDS tab.`,
     packs: () => `<b>LORE CRATES</b><br>${Object.entries(G.S.packs).filter(([, n]) => n > 0).map(([k, n]) => `${G.PACKS[k].name}: ${n}`).join('<br>') || 'None — catch floating crates!'}<br><span class="tl2">Click to open.</span>`,
     autoalloc: () => `<b>AUTO ALLOCATION</b><br>Automatically gives serving just enough compute to meet user demand (max 80%), and the rest to training. Research/alignment shares are always set by you.`,
+    combo: () => {
+      const S = G.S, D = G.D;
+      const rows = S.buffs.map((b) => `${b.name}: ${buffFx(b)} · ${Math.ceil(b.left)}s`);
+      return `<b>ACTIVE COMBO</b><br>${rows.join('<br>') || 'No buffs active.'}<hr>Revenue ×${U.fmt(D.comboMoney)} · Clicks ×${U.fmt(D.comboClick)}<div class="tl2">Buffs multiply each other. Stack drops and abilities for huge combos.</div>`;
+    },
+    ticker: () => (G.UI.tickerLeak() ? '<b>🍎 LEAK!</b><br>Click the headline before it disappears.' : '<b>NEWS TICKER</b><br>Headlines change as you progress. Watch for 🍎 leaks — they are clickable.'),
   };
+  function buffFx(b) {
+    const parts = [];
+    for (const [k, lbl] of [['money', 'revenue'], ['compute', 'compute'], ['users', 'users'], ['click', 'clicks'], ['rp', 'RP'], ['data', 'data'], ['trainSpeed', 'training'], ['hwCost', 'hardware cost']]) {
+      if (b[k] && b[k] !== 1) parts.push(`${lbl} ×${U.fmt(b[k])}`);
+    }
+    return parts.join(', ') || 'special';
+  }
+  UI.buffFx = buffFx;
+  UI.tickerLeak = () => !!TK.leak;
   function findTip(el) {
     while (el && el !== document.body) {
       if (el._tip) return el._tip;
@@ -75,25 +90,104 @@
   };
 
   /* ------------------------------------------------------------------ toasts & banner */
+  /* toasts stack in the bottom-right corner (never over the shop); a repeated message bumps a ×N counter */
   UI.toast = (text, kind, ms) => {
     const box = U.$('#toasts');
+    const life = ms || (kind === 'bad' ? 5500 : 3500);
+    const same = [...box.children].find((x) => x._text === text && !x.classList.contains('out'));
+    if (same) {
+      same._n = (same._n || 1) + 1;
+      U.setText(same._cnt, '×' + same._n);
+      clearTimeout(same._timer);
+      same._timer = setTimeout(() => dismiss(same), life);
+      return same;
+    }
     while (box.childElementCount > 2) box.firstChild.remove();
-    const t = h('div.toast.' + (kind || 'info'), text);
+    const cnt = h('span.tcnt');
+    const t = h('div.toast.' + (kind || 'info'), h('span.ttx', text), cnt);
+    t._text = text;
+    t._cnt = cnt;
+    t.addEventListener('click', () => dismiss(t));
     box.appendChild(t);
-    setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 320); }, ms || (kind === 'bad' ? 5000 : 3000));
+    t._timer = setTimeout(() => dismiss(t), life);
     return t;
   };
-  let bannerTimer = 0;
+  function dismiss(t) {
+    if (t.classList.contains('out')) return;
+    t.classList.add('out');
+    setTimeout(() => t.remove(), 320);
+  }
+  /* big announcements: one at a time, queued so they never overwrite each other */
+  const bannerQ = [];
+  let bannerBusy = false;
   UI.banner = (kicker, title, textStr) => {
+    if (bannerQ.length >= 3) bannerQ.shift();
+    bannerQ.push([kicker, title, textStr]);
+    if (!bannerBusy) nextBanner();
+  };
+  function nextBanner() {
+    const next = bannerQ.shift();
     const b = U.$('#banner');
-    U.$('#bannerK').textContent = kicker || '';
-    U.$('#bannerT').textContent = title || '';
-    U.$('#bannerX').textContent = textStr || '';
+    if (!next) { bannerBusy = false; return; }
+    bannerBusy = true;
+    U.$('#bannerK').textContent = next[0] || '';
+    U.$('#bannerT').textContent = next[1] || '';
+    U.$('#bannerX').textContent = next[2] || '';
     b.classList.remove('show');
     void b.offsetWidth;
     b.classList.add('show');
-    clearTimeout(bannerTimer);
-    bannerTimer = setTimeout(() => b.classList.remove('show'), 3500);
+    setTimeout(() => { b.classList.remove('show'); setTimeout(nextBanner, 150); }, 2900);
+  }
+
+  /* ------------------------------------------------------------------ news ticker */
+  const TK = { left: 2, leak: null, lastLeak: -1e9, el: null };
+  UI.initTicker = () => {
+    TK.el = U.$('#tkText');
+    TK.el.addEventListener('click', () => {
+      if (!TK.leak) return;
+      const kind = TK.leak;
+      TK.leak = null;
+      const text = G.Sim.catchLeak(kind);
+      const r = TK.el.getBoundingClientRect();
+      G.Audio.catch();
+      G.FX.burst(r.left + 60, r.top + 10, { n: 24, colors: ['#ff4d6d', '#ffe45c', '#5cf27a', '#ffffff'] });
+      G.FX.float(r.left + 120, r.top + 30, text, 'big');
+      TK.left = 0.6;
+    });
+  };
+  function fillTicker(t) {
+    const S = G.S, D = G.D;
+    const rivals = Object.keys(S.rivals || {}).filter((id) => S.rivals[id].cap > 0);
+    const vars = {
+      model: D.model ? D.model.name : 'a tiny RNN', lab: (G.LABS[S.lab] || {}).name || 'your lab',
+      rival: rivals.length ? G.LABS[U.pick(rivals)].name : 'a rival lab', users: U.fmt(Math.max(1, D.users)),
+      cap: Math.round(D.cap), money: U.fmtMoney(S.stats.totalMoney),
+    };
+    return t.replace(/\{(\w+)\}/g, (_, k) => (vars[k] !== undefined ? vars[k] : ''));
+  }
+  UI.updateTicker = (dt) => {
+    if (!TK.el) return;
+    TK.left -= dt;
+    if (TK.left > 0) return;
+    const S = G.S, D = G.D, cap = D.bestCap;
+    const now = S.stats.playTime;
+    let text, leak = null;
+    if (cap >= 25 && now - TK.lastLeak > 75 && Math.random() < 0.12) {
+      const L = U.pick(G.TICKER_LEAKS);
+      text = L[0];
+      leak = L[1];
+      TK.lastLeak = now;
+    } else {
+      const pool = G.TICKER.filter((x) => cap >= x[1] && cap <= x[2]);
+      text = fillTicker(U.weighted(pool.length ? pool : G.TICKER, (x) => x[3])[0]);
+    }
+    TK.leak = leak;
+    TK.left = leak ? 9 : 12;
+    TK.el.textContent = text;
+    TK.el.className = leak ? 'leak' : '';
+    U.setText(U.$('#tkLabel'), leak ? 'LEAK' : cap >= 500 ? 'COSMIC NEWS' : 'NEWS');
+    U.toggleClass(U.$('#ticker'), 'leak', !!leak);
+    TK.el.classList.remove('in'); void TK.el.offsetWidth; TK.el.classList.add('in');
   };
 
   /* ------------------------------------------------------------------ drops layer */
@@ -150,7 +244,7 @@
   /* ------------------------------------------------------------------ top bar */
   const R = {};
   UI.initTop = () => {
-    for (const id of ['rMoney', 'rMoneyR', 'rFlops', 'rFlopsR', 'rData', 'rDataR', 'rRP', 'rRPR', 'rAP', 'rAPR', 'rStraw', 'dateTxt', 'eraTxt', 'packCount', 'eraBadge', 'clickVal']) R[id] = document.getElementById(id);
+    for (const id of ['rMoney', 'rMoneyR', 'rFlops', 'rFlopsR', 'rData', 'rDataR', 'rRP', 'rRPR', 'rAP', 'rAPR', 'rStraw', 'dateTxt', 'eraTxt', 'packCount', 'eraBadge', 'clickVal', 'combo']) R[id] = document.getElementById(id);
     U.$('#packBtn').addEventListener('click', () => {
       G.Audio.tab();
       if (G.Sim.totalPacks() > 0) G.Pack.open('legendary');
@@ -166,6 +260,10 @@
     const S = G.S, D = G.D;
     U.setText(R.rMoney, U.fmtMoney(S.money));
     U.setText(R.rMoneyR, '+' + U.fmtMoney(D.revenue) + '/s');
+    const combo = Math.max(D.comboMoney, D.comboClick);
+    U.setText(R.combo, combo > 1.01 ? '×' + U.fmt(combo) : '');
+    U.toggleClass(R.combo, 'on', combo > 1.01);
+    U.toggleClass(R.combo, 'huge', combo >= 49);
     U.setText(R.rFlops, U.fmtFlops(D.compute).replace(' FLOP/s', ''));
     U.setText(R.rFlopsR, 'FLOP/s' + (D.throttle < 1 ? ' ⚡' + Math.round(D.throttle * 100) + '%' : ''));
     U.toggleClass(R.rFlops.closest('.res'), 'warn', D.throttle < 1);

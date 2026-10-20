@@ -1,0 +1,81 @@
+/* News ticker (Cookie Clicker style): headlines that evolve with your capability. [text, minCap, maxCap, weight]
+ * {model} {lab} {rival} {users} {cap} {money} are filled in. Leaks are clickable for a small reward. */
+(function (root) {
+  'use strict';
+  const G = root.G;
+
+  G.TICKER = [
+    // the garage
+    ['Local lab claims neural networks "just need to be bigger." Experts: "lol."', 0, 90, 3],
+    ['Grad student trains {model} on a gaming GPU; roommate complains about the fan noise.', 0, 80, 2],
+    ['Gary Marcus publishes paper: "Deep Learning Is Hitting A Wall." It is 2012.', 0, 120, 2],
+    ['ImageNet top-5 error drops again. Computer vision researchers quietly update their CVs.', 0, 90, 2],
+    ['Yann LeCun: "Convolutional nets have been working since 1989, thank you very much."', 0, 110, 2],
+    ['"Attention" trending on arXiv. Linguists unsure whether to be flattered or worried.', 40, 130, 2],
+    ['Recurrent neural nets forget the beginning of this sentence by the time they reach the', 20, 100, 2],
+    ['Startup raises seed round to "democratize matrix multiplication."', 0, 140, 1],
+    ['Survey: 92% of AI researchers think AGI is 50 years away. Same survey said that in 1970.', 0, 160, 2],
+    ['{lab} buys its second GPU. Interns fight over who gets to SSH into it.', 0, 70, 2],
+    // scaling
+    ['GPT-2 deemed "too dangerous to release." It writes a story about unicorns.', 90, 170, 2],
+    ['Scaling laws paper: "loss goes down and to the right." Investors circle the chart in red.', 90, 200, 3],
+    ['{model} writes passable poetry. Poets write passable takes about {model}.', 90, 210, 2],
+    ['Data scientists discover "the internet" is a dataset. Reddit nervously checks its terms of service.', 80, 200, 2],
+    ['Report: compute used in largest AI runs doubling every 6 months. Utilities: "every WHAT?"', 100, 260, 2],
+    ['Chinchilla paper reveals everyone was undertraining. Everyone pretends they knew.', 120, 230, 2],
+    ['{rival} announces model "too powerful to describe." Describes it anyway, in a 90-page tweet thread.', 80, 300, 2],
+    // chatgpt era
+    ['{users} people chat with {model} daily. Most ask it to write emails they will not read.', 185, 300, 3],
+    ['"Our GPUs are melting," says CEO, while buying more GPUs.', 185, 320, 3],
+    ['Teachers ban {model}. Students ask {model} how to get around the ban.', 185, 280, 2],
+    ['LinkedIn influencer: "I asked {model} to write this post." It shows.', 185, 300, 2],
+    ['Prompt engineer job listing requires "10 years of experience with {model}."', 185, 280, 2],
+    ['Lawyer cites six cases invented by a chatbot. Judge: "Bold strategy."', 185, 260, 2],
+    ['Strawberry has how many R\'s? Labs spend $100M to find out.', 200, 300, 3],
+    ['r/singularity declares AGI achieved for the 47th time this month.', 160, 400, 3],
+    ['Jimmy Apples posts a single 🍎. Markets move $40B.', 150, 450, 2],
+    ['roon tweets "vibes." 2,000 replies attempt exegesis.', 150, 450, 2],
+    ['Chubby: "BREAKING: something is happening." It is.', 150, 480, 2],
+    ['Benchmark saturated. New benchmark announced. New benchmark saturated.', 200, 420, 3],
+    ['NVIDIA CEO spotted signing a fan\'s GPU. Fan sells signature for one month of H100 rental.', 150, 400, 2],
+    ['{lab} market cap passes {money}. Interns still not allowed to expense lunch.', 185, 500, 1],
+    // agents & gigawatts
+    ['Gigawatt datacenter breaks ground next to a nuclear plant. Neighbors notice the lights dim.', 250, 420, 3],
+    ['{model} agent books a flight, files your taxes, and accidentally buys a boat.', 250, 380, 2],
+    ['METR: AI task horizon now measured in "work days." Then "work weeks." Then "uh oh."', 250, 420, 3],
+    ['Coding agents write 90% of the code. The other 10% is arguing about tabs vs spaces.', 280, 420, 2],
+    ['Senator asks {model} to explain itself. It does, better than the senator.', 250, 420, 2],
+    ['Data wall reached: the entire internet has been read twice. Third read "mostly skimming."', 260, 420, 2],
+    ['Power companies now list "frontier AI lab" as a weather pattern.', 260, 450, 2],
+    ['Study: 40% of new research papers co-authored by models. 100% reviewed by models.', 280, 460, 2],
+    // takeoff
+    ['AI R&D multiplier hits {cap}x... wait, that is your capability. It is also going up.', 330, 500, 2],
+    ['Superhuman coder released. Human coders pivot to "vibe architects."', 330, 480, 3],
+    ['OpenBrain, DeepCent and {lab} race to the finish. The finish line keeps moving.', 330, 500, 2],
+    ['Alignment team asks for one more week. Board grants 20 minutes.', 330, 500, 2],
+    ['Leaked memo: "it is thinking in a language we do not understand." Memo was written by the model.', 350, 500, 2],
+    ['Eliezer posts a 40,000 word thread titled "short version."', 300, 520, 2],
+    ['Beff Jezos: "accelerate." Nobody asked. Everyone listened.', 250, 520, 2],
+    ['PauseAI protest outside {lab} HQ. Protesters\' signs generated by {model}.', 280, 520, 2],
+    // superintelligence & beyond
+    ['ASI solves protein folding, fusion and your inbox. Still cannot fold a fitted sheet.', 500, 1e9, 3],
+    ['Kardashev scale rises. Astronomers notice the Sun getting a little... tidier.', 500, 1e9, 3],
+    ['Mercury reported missing. Last seen near a Dyson swarm.', 500, 1e9, 3],
+    ['Von Neumann probes send postcards: "Wish you were here. Actually, you are."', 500, 1e9, 2],
+    ['Universal Basic Compute checks arrive. Humanity spends them on cat videos at 8K.', 500, 1e9, 2],
+    ['Gary Marcus: "This is still not AGI." The galaxy agrees to disagree.', 500, 1e9, 3],
+    ['Matrioshka brain completes thought. The thought was: "more."', 500, 1e9, 2],
+    ['Heat death of the universe postponed indefinitely, pending review.', 600, 1e9, 2],
+    ['Andromeda responds to our messages: "please stop sending the scaling laws paper."', 600, 1e9, 2],
+    ['Every atom is now a little bit smarter. Some of them are insufferable about it.', 650, 1e9, 2],
+  ];
+
+  /* clickable leaks: [text, reward] — reward handled by Sim.catchLeak */
+  G.TICKER_LEAKS = [
+    ['🍎 LEAK: internal benchmark screenshot spotted on a Discord server. CLICK TO GRAB IT', 'rp'],
+    ['🍎 LEAK: Jimmy Apples knows the release date. CLICK FOR THE SCOOP', 'vibe'],
+    ['🍎 LEAK: secret investor deck found on a train. CLICK TO READ IT', 'money'],
+    ['🍎 LEAK: a crate of prototype chips fell off a truck. CLICK TO CATCH IT', 'crate'],
+    ['🍎 LEAK: training run logs posted by a "former employee." CLICK TO DOWNLOAD', 'train'],
+  ];
+})(typeof window !== 'undefined' ? window : globalThis);

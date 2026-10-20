@@ -166,8 +166,12 @@
     if (s.flags.goldengate) M.vibeFloor += 0;
     // buffs
     D.frenzy = 1;
+    D.comboMoney = 1; // how much active buffs multiply revenue / clicks (shown as the combo badge)
+    D.comboClick = 1;
     for (const b of s.buffs) {
       for (const k of ['compute', 'money', 'rp', 'ap', 'users', 'click', 'data', 'hwCost', 'trainSpeed', 'vibeGain']) if (b[k]) M[k] *= b[k];
+      D.comboMoney *= (b.money || 1) * (b.users || 1);
+      D.comboClick *= b.click || 1;
     }
     M.vibeFloor = Math.min(70, M.vibeFloor);
     M.mfu = Math.min(B.MAX_MFU - B.BASE_MFU, M.mfu);

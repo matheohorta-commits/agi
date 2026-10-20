@@ -508,6 +508,24 @@
     return { drop: d, text, pack };
   };
 
+  /** clicking a 🍎 leak headline in the news ticker */
+  Sim.catchLeak = (kind) => {
+    let text = '';
+    switch (kind) {
+      case 'rp': { const g = Math.max(30, D.rpRate * 90); S.rp += g; text = `Benchmark leak: +${U.fmt(g)} RP`; break; }
+      case 'vibe': addVibe(25); addBuff({ id: 'scoop', name: 'The Scoop', dur: 30, users: 1.5 }); text = 'The scoop! Vibes +25, users ×1.5 for 30s'; break;
+      case 'money': { const g = Math.max(100, D.revenue * 60); S.money += g; S.stats.totalMoney += g; text = `Investor deck: +${U.fmtMoney(g)}`; break; }
+      case 'crate': S.packs.basic++; text = 'A Lore Crate fell off the truck!'; break;
+      default:
+        if (S.training) { addTrainProgress(S.training.flop * 0.1); text = 'Leaked logs: training +10%'; }
+        else { const g = Math.max(30, D.rpRate * 60); S.rp += g; text = `Leaked logs: +${U.fmt(g)} RP`; }
+    }
+    S.stats.leaks = (S.stats.leaks || 0) + 1;
+    Sim.recalc();
+    bus.emit('leak', { kind, text });
+    return text;
+  };
+
   /* ================================================================== packs & cards */
   Sim.rollRarity = (packType) => {
     const minR = G.PACKS[packType].minRarity;

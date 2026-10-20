@@ -9,7 +9,7 @@
       totalMoney: 0, clicks: 0, runs: 0, maxRunFlop: 0, drops: 0, packsOpened: 0, rarityPulls: [0, 0, 0, 0, 0],
       miniWins: 0, miniById: {}, rank1Streak: 0, playTime: 0, maxHwOwned: 0, efficientModel: false, asiCount: 0,
       chinchillaRun: false, overtrained: false, undertrained: false, strawberryDrops: 0, longestOffline: 0,
-      bestCapEver: 0, incidents: 0,
+      bestCapEver: 0, incidents: 0, leaks: 0,
     };
   }
 
