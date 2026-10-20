@@ -5,55 +5,69 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>FEEL THE AGI</title>
   <meta name="description" content="An idle game about scaling laws, compute, and the race to superintelligence.">
-  <link rel="stylesheet" href="css/style.css?v=14">
+  <link rel="stylesheet" href="css/style.css?v=15">
 </head>
 <body class="era-0">
+  <div id="bg"></div>
   <div id="app">
     <header id="topbar">
-      <div id="logo">FEEL THE AGI<small>scaling to superintelligence</small></div>
-      <div class="res money hero" data-tip="money"><img data-sprite="coin"><div class="col"><span class="v" id="rMoney">$0</span><span class="r" id="rMoneyR">+$0/s</span></div><span id="combo" data-tip="combo"></span></div>
-      <div class="res flops" data-tip="compute"><img data-sprite="chip"><div class="col"><span class="v" id="rFlops">0</span><span class="r" id="rFlopsR">compute</span></div></div>
-      <div class="res data" data-tip="data"><img data-sprite="book"><div class="col"><span class="v" id="rData">0</span><span class="r" id="rDataR">+0/s</span></div></div>
-      <div class="res rp" data-tip="rp"><img data-sprite="brain"><div class="col"><span class="v" id="rRP">0</span><span class="r" id="rRPR">+0/s</span></div></div>
-      <div class="res ap" data-tip="ap"><img data-sprite="shield"><div class="col"><span class="v" id="rAP">0</span><span class="r" id="rAPR">safety</span></div></div>
-      <div class="res ins" data-tip="insight" id="insChip" style="display:none"><img data-sprite="gem"><div class="col"><span class="v" id="rIns">0</span><span class="r" id="rInsR">insight</span></div></div>
-      <div class="res straw" data-tip="straw"><img data-sprite="strawberry"><div class="col"><span class="v" id="rStraw">0</span><span class="r">🍓</span></div></div>
-      <div id="dateBox"><b id="dateTxt">Sep 2012</b><span id="eraTxt">The Garage</span></div>
+      <div id="logo"><span class="l1">FEEL THE</span><span class="l2">AGI</span></div>
+      <div class="res money hero" data-tip="money">
+        <div class="coinwell"><img data-sprite="coin" data-scale="2"></div>
+        <div class="col"><span class="v" id="rMoney">$0</span><span class="r"><b id="rMoneyR">+$0/s</b><span class="pc">click <span id="clickVal2">+$1</span></span></span></div>
+        <span id="combo" data-tip="combo"></span>
+      </div>
+      <div id="resRow">
+        <div class="res flops" data-tip="compute"><img data-sprite="chip" data-scale="2"><div class="col"><span class="k">COMPUTE</span><span class="v" id="rFlops">0</span><span class="r" id="rFlopsR">compute</span></div></div>
+        <div class="res data" data-tip="data"><img data-sprite="book" data-scale="2"><div class="col"><span class="k">DATA</span><span class="v" id="rData">0</span><span class="r" id="rDataR">+0/s</span></div></div>
+        <div class="res rp" data-tip="rp"><img data-sprite="brain" data-scale="2"><div class="col"><span class="k">RESEARCH</span><span class="v" id="rRP">0</span><span class="r" id="rRPR">+0/s</span></div></div>
+        <div class="res ap" data-tip="ap"><img data-sprite="shield" data-scale="2"><div class="col"><span class="k">SAFETY</span><span class="v" id="rAP">0</span><span class="r" id="rAPR">safety</span></div></div>
+        <div class="res ins" data-tip="insight" id="insChip" style="display:none"><img data-sprite="gem" data-scale="2"><div class="col"><span class="k">INSIGHT</span><span class="v" id="rIns">0</span><span class="r" id="rInsR">insight</span></div></div>
+        <div class="res straw" data-tip="straw"><img data-sprite="strawberry" data-scale="2"><div class="col"><span class="k">BERRIES</span><span class="v" id="rStraw">0</span><span class="r">🍓 crates</span></div></div>
+      </div>
+      <div id="dateBox" data-tip="era"><b id="dateTxt">Sep 2012</b><span id="eraTxt">The Garage</span><div class="eraprog"><i id="eraProg"></i></div></div>
       <div class="topbtns">
-        <button class="iconbtn" id="packBtn" data-tip="packs"><img data-sprite="crate" style="width:24px;height:24px"><span class="count" id="packCount">0</span></button>
+        <button class="iconbtn" id="packBtn" data-tip="packs"><img data-sprite="crate" data-scale="2" style="width:32px;height:32px"><span class="count" id="packCount">0</span></button>
         <button class="iconbtn" id="muteBtn" title="Sound">♪</button>
         <button class="iconbtn" id="setBtn" title="Settings">⚙</button>
       </div>
     </header>
-    <div id="ticker" data-tip="ticker"><b id="tkLabel">NEWS</b><div id="tkTrack"><span id="tkText"></span></div></div>
+    <div id="track" data-tip="track">
+      <div id="trackLbl">ROAD TO<b>SUPERINTELLIGENCE</b></div>
+      <div id="trackBar"><div id="trackEras"></div><div id="trackFill"></div><div id="trackTicks"></div><div id="trackMe"></div></div>
+      <div id="trackNext"><span class="k">NEXT MILESTONE</span><b id="trackNextT">—</b><span id="trackNextS"></span></div>
+    </div>
 
     <main id="layout">
       <section id="left">
         <div class="panel" id="scenePanel">
           <canvas id="sceneCanvas"></canvas>
           <div id="eraBadge">THE GARAGE</div>
-          <div id="clickHint">CLICK THE MODEL · <span id="clickVal">+$1</span></div>
+          <div id="clickHint">▲ CLICK THE MODEL · <span id="clickVal">+$1</span></div>
+          <div id="abilities"></div>
         </div>
-        <div class="panel" id="abilityPanel"><div id="abilities"></div></div>
         <div class="panel" id="modelPanel">
-          <div class="ptitle">DEPLOYED MODEL<span class="grow"></span><span id="rankBadge">#?</span></div>
+          <div class="ptitle"><img data-sprite="orb" data-scale="1">DEPLOYED MODEL<span class="grow"></span><span id="rankBadge">#?</span></div>
           <div class="body">
-            <div id="modelName">— no model yet —</div>
-            <div id="capBig">0<small>CAPABILITY</small></div>
-            <div class="capbar" id="capBar"></div>
-            <div id="modelSub">Train your first model in the TRAIN tab.</div>
+            <div id="capRing"><div id="capBig">0<small>CAPABILITY</small></div></div>
+            <div class="mi">
+              <div id="modelName">— no model yet —</div>
+              <div id="modelSub">Train your first model in the TRAIN tab.</div>
+              <div class="capbar" id="capBar"></div>
+            </div>
             <div class="benches" id="benches"></div>
           </div>
         </div>
         <div class="panel" id="trainMini">
-          <div class="ptitle">TRAINING RUN<span class="grow"></span><span id="trainEta" class="tiny"></span></div>
+          <div class="ptitle"><img data-sprite="chart" data-scale="1">TRAINING RUN<span class="grow"></span><span id="trainEta" class="tiny"></span></div>
           <div class="body">
             <div class="pbar"><i id="trainBar" style="width:0%"></i><span id="trainPct">IDLE</span></div>
+            <button class="bigbtn green" id="quickTrain">▶ TRAIN</button>
             <canvas id="lossMini" width="300" height="54"></canvas>
           </div>
         </div>
         <div class="panel" id="allocPanel">
-          <div class="ptitle">COMPUTE ALLOCATION<span class="grow"></span><label class="toggle" data-tip="autoalloc"><input type="checkbox" id="autoAlloc" checked><span class="sw"></span>AUTO</label></div>
+          <div class="ptitle"><img data-sprite="gear" data-scale="1">COMPUTE ALLOCATION<span class="grow"></span><label class="toggle" data-tip="autoalloc"><input type="checkbox" id="autoAlloc" checked><span class="sw"></span>AUTO</label></div>
           <div class="body" id="allocBody"></div>
         </div>
       </section>
@@ -64,25 +78,27 @@
       </section>
 
       <section id="right">
-        <div class="panel" id="vibePanel">
-          <div class="ptitle">THE VIBES<span class="grow"></span><span id="vibeNum" class="tiny"></span></div>
+        <div class="panel" id="vibePanel" data-tip="vibes">
           <div class="body">
-            <div class="vibebar"><i id="vibeKnob" style="left:50%"></i></div>
-            <div class="vibelabels"><span class="l">IT'S SO OVER</span><span class="r">WE'RE SO BACK</span></div>
-            <div id="vibeText">neutral</div>
+            <div class="gauge"><div class="garc"></div><i id="vibeKnob"></i><span class="gl">OVER</span><span class="gr">BACK</span></div>
+            <div class="vibeinfo"><span class="k">THE VIBES</span><b id="vibeText">neutral</b><span id="vibeNum" class="tiny"></span></div>
           </div>
         </div>
-        <div class="panel" id="buffPanel" style="display:none"><div class="ptitle">ACTIVE EFFECTS</div><div class="pad" id="buffs"></div></div>
+        <div class="panel" id="buffPanel" style="display:none"><div class="ptitle"><img data-sprite="spark" data-scale="1">ACTIVE EFFECTS<span class="grow"></span><span id="buffMult" class="tiny"></span></div><div class="pad" id="buffs"></div></div>
         <div class="panel" id="feedPanel">
-          <div class="ptitle">TIMELINE<span class="grow"></span><span class="tiny">𝕏</span></div>
+          <div class="ptitle"><img data-sprite="bird" data-scale="1">TIMELINE<span class="grow"></span><span class="tiny" id="feedLive">● LIVE</span></div>
           <div id="feed"></div>
         </div>
         <div class="panel" id="objPanel">
-          <div class="ptitle">OBJECTIVES</div>
+          <div class="ptitle"><img data-sprite="flag" data-scale="1">OBJECTIVES<span class="grow"></span><span class="tiny" id="objCount"></span></div>
           <div class="body" id="objectives"></div>
         </div>
       </section>
     </main>
+    <footer id="statusbar">
+      <div id="ticker" data-tip="ticker"><b id="tkLabel">NEWS</b><div id="tkTrack"><span id="tkText"></span></div></div>
+      <div id="sbRight"><span id="sbLab"></span><span id="sbPlay"></span><span id="sbSave">● saved</span></div>
+    </footer>
   </div>
 
   <canvas id="fxCanvas"></canvas>
@@ -97,35 +113,35 @@
   <div id="intro"></div>
 
   <!-- ?v= forces browsers / local servers to load matching files after an update: bump it (and FTAGI_BUILD) when shipping changes -->
-  <script>window.FTAGI_BUILD = '14';</script>
-  <script src="js/util.js?v=14"></script>
-  <script src="js/data/balance.js?v=14"></script>
-  <script src="js/data/labs.js?v=14"></script>
-  <script src="js/data/buildings.js?v=14"></script>
-  <script src="js/data/research.js?v=14"></script>
-  <script src="js/data/products.js?v=14"></script>
-  <script src="js/data/cards.js?v=14"></script>
-  <script src="js/data/story.js?v=14"></script>
-  <script src="js/data/feed.js?v=14"></script>
-  <script src="js/data/ticker.js?v=14"></script>
-  <script src="js/data/achievements.js?v=14"></script>
-  <script src="js/data/cosmos.js?v=14"></script>
-  <script src="js/data/objectives.js?v=14"></script>
-  <script src="js/data/strategy.js?v=14"></script>
-  <script src="js/core/state.js?v=14"></script>
-  <script src="js/core/calc.js?v=14"></script>
-  <script src="js/core/sim.js?v=14"></script>
-  <script src="js/core/strategy.js?v=14"></script>
-  <script src="js/gfx/sprites.js?v=14"></script>
-  <script src="js/gfx/audio.js?v=14"></script>
-  <script src="js/gfx/scene.js?v=14"></script>
-  <script src="js/gfx/fx.js?v=14"></script>
-  <script src="js/gfx/pack.js?v=14"></script>
-  <script src="js/ui/ui.js?v=14"></script>
-  <script src="js/ui/panels.js?v=14"></script>
-  <script src="js/ui/tabs.js?v=14"></script>
-  <script src="js/ui/strategy.js?v=14"></script>
-  <script src="js/ui/modals.js?v=14"></script>
-  <script src="js/main.js?v=14"></script>
+  <script>window.FTAGI_BUILD = '15';</script>
+  <script src="js/util.js?v=15"></script>
+  <script src="js/data/balance.js?v=15"></script>
+  <script src="js/data/labs.js?v=15"></script>
+  <script src="js/data/buildings.js?v=15"></script>
+  <script src="js/data/research.js?v=15"></script>
+  <script src="js/data/products.js?v=15"></script>
+  <script src="js/data/cards.js?v=15"></script>
+  <script src="js/data/story.js?v=15"></script>
+  <script src="js/data/feed.js?v=15"></script>
+  <script src="js/data/ticker.js?v=15"></script>
+  <script src="js/data/achievements.js?v=15"></script>
+  <script src="js/data/cosmos.js?v=15"></script>
+  <script src="js/data/objectives.js?v=15"></script>
+  <script src="js/data/strategy.js?v=15"></script>
+  <script src="js/core/state.js?v=15"></script>
+  <script src="js/core/calc.js?v=15"></script>
+  <script src="js/core/sim.js?v=15"></script>
+  <script src="js/core/strategy.js?v=15"></script>
+  <script src="js/gfx/sprites.js?v=15"></script>
+  <script src="js/gfx/audio.js?v=15"></script>
+  <script src="js/gfx/scene.js?v=15"></script>
+  <script src="js/gfx/fx.js?v=15"></script>
+  <script src="js/gfx/pack.js?v=15"></script>
+  <script src="js/ui/ui.js?v=15"></script>
+  <script src="js/ui/panels.js?v=15"></script>
+  <script src="js/ui/tabs.js?v=15"></script>
+  <script src="js/ui/strategy.js?v=15"></script>
+  <script src="js/ui/modals.js?v=15"></script>
+  <script src="js/main.js?v=15"></script>
 </body>
 </html>

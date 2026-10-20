@@ -8,7 +8,7 @@
 
   /* ------------------------------------------------------------------ sprites in static html */
   UI.initSprites = () => {
-    U.$$('img[data-sprite]').forEach((img) => { img.src = G.Sprites.url(img.dataset.sprite, 3); });
+    U.$$('img[data-sprite]').forEach((img) => { img.src = G.Sprites.url(img.dataset.sprite, +img.dataset.scale || 3); });
   };
   UI.icon = (name, scale, tint) => G.Sprites.url(name, scale || 3, tint);
 
@@ -49,6 +49,18 @@
       const ins = G.S.insight;
       const left = G.STRAT.INSIGHT_SECONDS - ins.t;
       return `<b>◆ INSIGHTS</b><br>${ins.n} available · ${ins.total} earned<br>Next in ${Math.floor(left / 60)}m ${Math.floor(left % 60)}s<hr><span class="tl2">Spend them in STRATEGY → INSIGHTS to level up buildings (permanent).</span>`;
+    },
+    era: () => {
+      const D = G.D, era = G.ERAS[D.era];
+      return `<b>${era.name.toUpperCase()}</b> · ${era.years}<br>${U.fmtDate(D.date)}<hr>Era progress: ${U.fmtPct(eraProgress())}<div class="tl2">${D.era < 5 ? 'Eras advance with your best capability. Each era changes the lab, the music and the news.' : 'Post-ASI eras advance with cosmic energy and the stars you reach.'}</div>`;
+    },
+    track: () => {
+      const n = nextMilestone();
+      return `<b>ROAD TO SUPERINTELLIGENCE</b><br>Every diamond is a milestone of the real AI timeline (cyan = AI 2027). Reach the capability to unlock it — most give rewards.<hr>${n ? `Next: <b>${U.escape(n.title)}</b> at capability ${n.cap}<br>You: ${G.D.bestCap.toFixed(1)}` : 'All milestones reached.'}<div class="tl2">Hover a diamond for details.</div>`;
+    },
+    vibes: () => {
+      const S = G.S, D = G.D;
+      return `<b>THE VIBES ${S.vibe > 0 ? '+' : ''}${S.vibe.toFixed(0)}</b><br>Public sentiment about AI and your lab.<br>User demand ${U.fmtMult(D.vibeMult)}<hr><span class="tl2">Vagueposting, launches and SOTA releases push it up. Incidents and outages drag it down. It drifts back to neutral.</span>`;
     },
     ticker: () => (G.UI.tickerLeak() ? '<b>🍎 LEAK!</b><br>Click the headline before it disappears.' : '<b>NEWS TICKER</b><br>Headlines change as you progress. Watch for 🍎 leaks — they are clickable.'),
   };
@@ -249,7 +261,8 @@
   /* ------------------------------------------------------------------ top bar */
   const R = {};
   UI.initTop = () => {
-    for (const id of ['rMoney', 'rMoneyR', 'rFlops', 'rFlopsR', 'rData', 'rDataR', 'rRP', 'rRPR', 'rAP', 'rAPR', 'rStraw', 'dateTxt', 'eraTxt', 'packCount', 'eraBadge', 'clickVal', 'combo', 'insChip', 'rIns', 'rInsR']) R[id] = document.getElementById(id);
+    for (const id of ['rMoney', 'rMoneyR', 'rFlops', 'rFlopsR', 'rData', 'rDataR', 'rRP', 'rRPR', 'rAP', 'rAPR', 'rStraw', 'dateTxt', 'eraTxt', 'packCount', 'eraBadge', 'clickVal', 'clickVal2', 'combo', 'insChip', 'rIns', 'rInsR', 'eraProg', 'trackFill', 'trackMe', 'trackTicks', 'trackEras', 'trackNextT', 'trackNextS', 'sbPlay', 'sbLab', 'sbSave']) R[id] = document.getElementById(id);
+    initTrack();
     U.$('#packBtn').addEventListener('click', () => {
       G.Audio.tab();
       if (G.Sim.totalPacks() > 0) G.Pack.open('legendary');
@@ -269,13 +282,14 @@
     U.setText(R.combo, combo > 1.01 ? '×' + U.fmt(combo) : '');
     U.toggleClass(R.combo, 'on', combo > 1.01);
     U.toggleClass(R.combo, 'huge', combo >= 49);
-    U.setText(R.rFlops, U.fmtFlops(D.compute).replace(' FLOP/s', ''));
-    U.setText(R.rFlopsR, 'FLOP/s' + (D.throttle < 1 ? ' ⚡' + Math.round(D.throttle * 100) + '%' : ''));
+    const fl = U.fmtFlops(D.compute), sp = fl.lastIndexOf(' ');
+    U.setText(R.rFlops, fl.slice(0, sp));
+    U.setText(R.rFlopsR, fl.slice(sp + 1) + (D.throttle < 1 ? ' ⚡' + Math.round(D.throttle * 100) + '%' : ''));
     U.toggleClass(R.rFlops.closest('.res'), 'warn', D.throttle < 1);
     U.setText(R.rData, U.fmt(S.tokens));
-    U.setText(R.rDataR, D.dataWall && D.tokenRate === 0 ? 'DATA WALL' : '+' + U.fmt(D.tokenRate) + ' tok/s');
+    U.setText(R.rDataR, D.dataWall && D.tokenRate === 0 ? 'DATA WALL' : '+' + U.fmt(D.tokenRate) + '/s');
     U.setText(R.rRP, U.fmt(S.rp));
-    U.setText(R.rRPR, '+' + U.fmt(D.rpRate) + ' RP/s');
+    U.setText(R.rRPR, '+' + U.fmt(D.rpRate) + '/s');
     U.setText(R.rAP, D.alignReq > 0 ? Math.round(Math.min(3, D.safety) * 100) + '%' : U.fmt(S.ap));
     U.setText(R.rAPR, D.alignReq > 0 ? 'safety margin' : 'alignment');
     U.toggleClass(R.rAP.closest('.res'), 'warn', D.alignReq > 0 && D.safety < 1);
@@ -295,7 +309,87 @@
     R.packCount.style.display = np ? 'block' : 'none';
     U.toggleClass(U.$('#packBtn'), 'has', np > 0);
     U.setText(R.clickVal, '+' + U.fmtMoney(D.clickValue));
+    U.setText(R.clickVal2, '+' + U.fmtMoney(D.clickValue));
+    R.eraProg.style.width = (eraProgress() * 100).toFixed(1) + '%';
+    updateTrack();
+    U.setText(R.sbLab, (G.LABS[S.lab] || {}).name || '');
+    U.setText(R.sbPlay, '⏱ ' + U.fmtTime(S.stats.playTime));
     document.body.className = 'era-' + D.era + (S.ending === 'misaligned' ? ' bad' : '') + (S.settings.reduceFx ? ' reduce-fx' : '');
+  };
+
+  /* ------------------------------------------------------------------ road to superintelligence */
+  const ERA_COL = ['#b04dff', '#3fa7ff', '#10c28f', '#ff9b3d', '#3ee6ff', '#ffe45c'];
+  /** milestones are evenly spaced on the track; capability interpolates between them */
+  function capPos(cap) {
+    const ms = G.MILESTONES, n = ms.length - 1;
+    if (!(cap > ms[0].cap)) return 0;
+    for (let i = 0; i < n; i++) if (cap < ms[i + 1].cap) return (i + (cap - ms[i].cap) / (ms[i + 1].cap - ms[i].cap)) / n;
+    return 1;
+  }
+  const reached = (m) => (m.id === 'm_asi' ? !!G.S.flags.asi : !!G.S.milestones[m.id]);
+  function nextMilestone() { return G.MILESTONES.find((m) => !reached(m)) || null; }
+  function eraProgress() {
+    const S = G.S, D = G.D, e = D.era;
+    if (S.cosmos) {
+      if (e === 5) return U.clamp((Math.log10(Math.max(1, S.cosmos.energy)) - 15) / 6, 0, 1);
+      if (e === 6) return U.clamp(Math.log10(Math.max(1, S.cosmos.stars)) / 3, 0, 1);
+      return 1;
+    }
+    const a = G.ERAS[e].cap, b = e >= 4 ? 500 : G.ERAS[e + 1].cap;
+    return U.clamp((D.bestCap - a) / (b - a), 0, 1);
+  }
+  UI.eraProgress = eraProgress;
+  UI.nextMilestone = nextMilestone;
+  let trackSig = '';
+  function initTrack() {
+    R.trackTicks.innerHTML = '';
+    R.trackEras.innerHTML = '';
+    const eras = G.ERAS.filter((e) => e.cap < Infinity);
+    eras.forEach((e, i) => {
+      const a = capPos(e.cap), b = i + 1 < eras.length ? capPos(eras[i + 1].cap) : 1;
+      R.trackEras.appendChild(h('div', { style: { left: a * 100 + '%', width: (b - a) * 100 + '%', background: ERA_COL[i] || '#fff' } }));
+    });
+    const n = G.MILESTONES.length - 1;
+    G.MILESTONES.forEach((m, i) => {
+      const t = h('div.tk' + (m.ai27 ? '.ai27' : ''), { style: { left: (i / n) * 100 + '%' } });
+      t._m = m;
+      UI.tip(t, () => {
+        const done = reached(m);
+        return `<b>${U.escape(m.title)}</b><br><span class="tiny">${U.fmtDate(m.date)} · capability ${m.cap}${m.ai27 ? ' · AI 2027' : ''}</span>` +
+          (done ? `<div class="tl2">${U.escape(m.text)}</div><span style="color:var(--green)">✓ Reached</span>` : `<br><span style="color:var(--yellow)">Reach capability ${m.cap} (you: ${G.D.bestCap.toFixed(1)})</span>`);
+      });
+      R.trackTicks.appendChild(t);
+    });
+    trackSig = '';
+  }
+  function updateTrack() {
+    const D = G.D;
+    const p = capPos(D.bestCap) * 100;
+    R.trackFill.style.width = p.toFixed(2) + '%';
+    R.trackMe.style.left = p.toFixed(2) + '%';
+    const next = nextMilestone();
+    const sig = G.MILESTONES.map((m) => (reached(m) ? 1 : 0)).join('') + (next ? next.id : '');
+    if (sig !== trackSig) {
+      trackSig = sig;
+      for (const t of R.trackTicks.children) {
+        U.toggleClass(t, 'done', reached(t._m));
+        U.toggleClass(t, 'next', t._m === next);
+      }
+    }
+    if (next) {
+      U.setText(R.trackNextT, next.title);
+      U.setText(R.trackNextS, `capability ${D.bestCap.toFixed(D.bestCap < 100 ? 1 : 0)} / ${next.cap} · ${U.fmtDate(next.date)}`);
+    } else {
+      U.setText(R.trackNextT, G.S.omega && G.S.omega.count ? 'BEYOND THE OMEGA POINT' : 'THE OMEGA POINT AWAITS');
+      U.setText(R.trackNextS, 'every milestone reached');
+    }
+  }
+  /** brief "saved" pulse in the status bar */
+  UI.savedFlash = () => {
+    if (!R.sbSave) return;
+    R.sbSave.textContent = '● saved ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    R.sbSave.classList.remove('flash'); void R.sbSave.offsetWidth; R.sbSave.classList.add('flash');
+    setTimeout(() => R.sbSave.classList.remove('flash'), 900);
   };
 
   /* ------------------------------------------------------------------ bus wiring */
@@ -401,8 +495,11 @@
     nav.innerHTML = '';
     body.innerHTML = '';
     for (const t of UI.tabs) {
-      const btn = h('button.tab', { id: 'tab-' + t.id, data: { id: t.id } }, t.name, h('span.dot'));
+      const badge = h('span.badge');
+      const btn = h('button.tab', { id: 'tab-' + t.id, data: { id: t.id } }, h('img', { src: UI.icon(TAB_ICON[t.id] || 'star', 1) }), h('span.tlab', t.name), badge, h('span.dot'));
+      btn._badge = badge;
       btn.addEventListener('click', () => { G.Audio.tab(); UI.showTab(t.id); });
+      UI.tip(btn, () => `<b>${t.name}</b>${BADGES[t.id] ? '<br><span class="tl2">Green number = things you can afford right now.</span>' : ''}`);
       nav.appendChild(btn);
       const page = h('div.tabpage', { data: { id: t.id } });
       t.page = page;
@@ -412,7 +509,44 @@
     UI.refreshTabLocks();
     if (!UI.tabs.find((t) => t.id === UI.current && t.unlocked())) UI.current = 'compute';
     UI.showTab(UI.current);
+    fitTabs();
   };
+  const TAB_ICON = { compute: 'chip', data: 'book', train: 'brain', research: 'flask', team: 'crowd', strategy: 'chess', products: 'rocket', cards: 'crate', race: 'trophy', lessons: 'scroll', cosmos: 'galaxy', stats: 'magnifier' };
+  const canBuy = (kind, list) => list.filter((it) => G.Sim.unlocked(it.req) && G.S.money >= G.Sim.price(kind, it.id, 1)).length;
+  const canUpg = (kinds) => G.BUILDING_UPGRADES.filter((u) => kinds.includes(u.kind) && G.Sim.upgradeAvailable(u) && G.S.money >= G.Sim.upgradeCost(u)).length;
+  /** how many things on each tab you can afford right now (Cookie Clicker-style "buy me" counters) */
+  const BADGES = {
+    compute: () => canBuy('hw', G.HARDWARE) + (G.S.flags.power ? canBuy('power', G.POWER) : 0) + canUpg(['hw']),
+    data: () => canBuy('src', G.DATASRC) + canUpg(['src']),
+    team: () => canBuy('res', G.RESEARCHERS) + canBuy('safety', G.SAFETY) + canUpg(['res', 'safety']),
+    research: () => G.RESEARCH.filter((r) => G.Sim.canResearch(r)).length,
+    products: () => G.PRODUCTS.filter((p) => !G.S.products[p.id] && G.Sim.productUnlocked(p) && G.S.money >= G.Sim.productCost(p)).length,
+    strategy: () => G.SYNERGIES.filter((sy) => G.Sim.synAvailable(sy) && G.S.money >= G.Sim.synCost(sy)).length + G.INFLUENCERS.filter((f) => G.Sim.inflAvailable(f) && G.S.money >= f.cost).length,
+    cosmos: () => (G.S.cosmos ? G.COSMIC_STRUCTS.filter((st) => G.Sim.structUnlocked(st) && G.S.cosmos.joules >= G.Sim.structCost(st, 1)).length : 0),
+    cards: () => G.Sim.totalPacks(),
+  };
+  let badgeSig = '';
+  UI.updateTabBadges = () => {
+    let sig = '';
+    for (const t of UI.tabs) {
+      const btn = U.$('#tab-' + t.id);
+      if (!btn || !btn._badge || !BADGES[t.id] || btn.classList.contains('locked')) continue;
+      let n = 0;
+      try { n = BADGES[t.id](); } catch (e) { n = 0; }
+      U.setText(btn._badge, n > 0 ? (n > 99 ? '99+' : String(n)) : '');
+      sig += n > 0 ? (n > 9 ? 2 : 1) : 0;
+    }
+    if (sig !== badgeSig) { badgeSig = sig; fitTabs(); } // badges change the width the labels need
+  };
+  /** labels on every tab when they fit; otherwise icons only (active tab keeps its label) */
+  function fitTabs() {
+    const nav = U.$('#tabs');
+    if (!nav) return;
+    nav.classList.remove('compact');
+    if (nav.scrollWidth > nav.clientWidth + 1) nav.classList.add('compact');
+  }
+  UI.fitTabs = fitTabs;
+  if (typeof window !== 'undefined') window.addEventListener('resize', () => { try { fitTabs(); } catch (e) { /* not built yet */ } });
   UI.refreshTabLocks = () => {
     for (const t of UI.tabs) {
       const btn = U.$('#tab-' + t.id);
@@ -422,6 +556,7 @@
         btn.classList.remove('locked');
         btn.classList.add('alert');
         UI.toast(`New tab unlocked: ${t.name}`, 'good');
+        setTimeout(fitTabs, 0);
       }
       U.toggleClass(btn, 'locked', !un);
     }

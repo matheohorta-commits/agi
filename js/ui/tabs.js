@@ -78,7 +78,7 @@
     const best = h('span.best', '★ BEST VALUE');
     const msBar = h('i');
     const ms = h('div.ms', msBar);
-    const el = h('div.item', ic, h('div.mid', h('div.nl', name, lvl), prod, h('div.cl', cost, eta)), own, best, ms);
+    const el = h('div.item', ic, h('div.mid', h('div.nl', name, lvl), prod, h('div.cl', h('img.coin', { src: UI.icon('coin', 1) }), cost, eta)), own, best, ms);
     el._kind = kind;
     el._it = it;
     el.addEventListener('click', () => {

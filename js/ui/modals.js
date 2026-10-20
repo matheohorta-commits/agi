@@ -139,16 +139,19 @@
     el.appendChild(h('div.sub', 'AN IDLE GAME ABOUT SCALING LAWS, COMPUTE, AND THE RACE TO SUPERINTELLIGENCE'));
     el.appendChild(h('div.blurb', 'It\'s September 2012. You have one used GPU, a scraped dataset, and a hunch that neural networks just need to be bigger. Buy compute. Gather data. Train models along the scaling laws. Ship products, race the other labs, keep your models aligned — and ride the AI 2027 timeline all the way to superintelligence. And then keep going.'));
     el.appendChild(h('div.sub', 'CHOOSE YOUR LAB'));
-    const grid = labGrid(pick, (id) => (pick = id));
+    const go = h('button.bigbtn', { style: { fontSize: '14px', padding: '12px 26px' } }, 'START IN THE GARAGE');
+    const goLabel = () => U.setText(go, `START IN THE GARAGE AS ${((G.LABS[pick] || {}).name || '').toUpperCase()}`);
+    const grid = labGrid(pick, (id) => { pick = id; goLabel(); });
     grid.style.maxWidth = '980px';
     el.appendChild(grid);
-    const go = h('button.bigbtn', { style: { fontSize: '14px', padding: '12px 26px' } }, 'START IN THE GARAGE');
+    goLabel();
     go.addEventListener('click', () => {
       G.Audio.unlock();
       el.classList.remove('show');
       onStart(pick);
     });
-    el.appendChild(go);
+    // pinned to the bottom so it is reachable without scrolling on short screens
+    el.appendChild(h('div.introgo', go));
     el.appendChild(h('div.tiny', { style: { maxWidth: '760px', textAlign: 'center' } }, 'A work of satire and fiction. Real companies and public figures appear as parody based on their public statements; nothing here is endorsed by them. The AI 2027 timeline is adapted from the scenario at ai-2027.com.'));
     el.classList.add('show');
   };

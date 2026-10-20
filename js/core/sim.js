@@ -1209,10 +1209,13 @@
       s.nextFeed = U.rand(9, 20);
       const pool = G.FEED_IDLE.filter((f) => D.bestCap >= f[2] && D.bestCap <= f[3]);
       if (pool.length) {
-        const recent = new Set(s.feed.slice(0, 25).map((p) => p.text));
+        // never repeat something still on screen: a quiet timeline beats the same post five times
+        const recent = new Set(s.feed.slice(0, 30).map((p) => p.text));
         const cand = pool.filter((f) => !recent.has(f[1]));
-        const f = U.weighted(cand.length ? cand : pool, (x) => x[4]);
-        post(f[0], f[1]);
+        if (cand.length) {
+          const f = U.weighted(cand, (x) => x[4]);
+          post(f[0], f[1]);
+        }
       }
     }
 

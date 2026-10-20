@@ -27,6 +27,23 @@ Saves go to `localStorage` (autosave every 15 s, plus export/import strings in S
 
 ## What's in it
 
+**The interface.** A game HUD built for optimizing at a glance:
+- **Top bar:** a big money counter with income and click value, labelled resource chips, and the date/era with an era progress bar.
+- **Road to Superintelligence track:** every real-timeline milestone (AlexNet → GPT-3 → ChatGPT → the AI 2027 months → ASI → Galactic
+  Mind) as diamonds you light up. It names the next milestone and the capability it needs; hover a diamond for its story.
+- **Left column (your lab):**
+  - the animated scene with an ability hotbar;
+  - a capability ring that fills toward the next milestone;
+  - live benchmarks;
+  - a one-click **TRAIN NEXT MODEL** button;
+  - compute allocation.
+- **Center tabs:** icon tabs with green counters showing how many things on each tab you can afford right now. Shop cards show output,
+  share of total, ★ best value, time-to-afford and the progress bar to the next ×2 upgrade.
+- **Right column:** a vibes gauge, active effects with countdowns, an X-style timeline (replies, reposts and likes grow with your user
+  base) and objectives.
+- **Bottom status bar:** a news ticker, playtime and an autosave indicator.
+- Colours shift with each era, and the layout adapts down to 1366×657 browser windows.
+
 **Core loop: the scaling laws are the gameplay**
 - Pretraining uses the Chinchilla fit `L = 1.69 + 406.4/N^0.34 + 410.7/D^0.28`; compute = 6·N·D. By default START auto-sizes the
   loss-optimal run for ~15 s / 1 / 5 / 20 min with all your data and compute, so buying GPUs and data always pays off in the next run
@@ -55,8 +72,8 @@ Eliezer, Beff Jezos, r/singularity, Hacker News... Some posts are interactive mi
 
 **Random drops & combos.** Things float across the screen: 🍓 FEEL THE AGI (revenue ×7), ⚡ Click Storm (clicks ×777),
 Supply Boom, 🪙 Lucky rounds (15% of your bank, capped at 15 minutes of revenue — keep cash), 🍎 leaks, GPU shipments, viral demos,
-eureka moments and **Lore Crates**. Buffs multiply each other; the COMBO badge in the HUD shows the stack. The **news ticker** under the
-HUD runs era-aware headlines; 🍎 LEAK headlines are clickable.
+eureka moments and **Lore Crates**. Buffs multiply each other; the COMBO badge in the HUD shows the stack. The **news ticker** in the
+status bar runs era-aware headlines; 🍎 LEAK headlines are clickable.
 
 **Lore Crates — HOLD TO OPEN.** A pixel card-reveal homage: brick wall and torches, a locked card with a breathing ring, hold to charge
 (shake, cracks, lightning), burst (flash, shockwave, bricks exploding and piling up), rarity title slam, card flip, NEW!/×N badge,

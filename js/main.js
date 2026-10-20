@@ -5,10 +5,11 @@
   const U = G.U;
   const Main = (G.Main = {});
   let last = 0, simAcc = 0, uiAcc = 0, tabAcc = 0, saveAcc = 0, running = false;
+  let wiping = false; // set by a hard reset: nothing may write the save back while the page reloads
 
   Main.save = () => {
-    if (!G.S) return;
-    G.Save.save(G.S);
+    if (!G.S || wiping) return;
+    if (G.Save.save(G.S) && G.UI.savedFlash) G.UI.savedFlash();
   };
 
   function applySettings() {
@@ -39,6 +40,10 @@
   };
 
   Main.hardReset = () => {
+    // stop the loop and block every save path first: the reload fires beforeunload,
+    // which would otherwise write the current run straight back into storage
+    wiping = true;
+    running = false;
     G.Save.wipe();
     location.reload();
   };
@@ -142,6 +147,7 @@
       guard('tabs', () => G.UI.updateTabs());
       guard('objectives', () => G.Panels.updateObjectives());
       guard('tabLocks', () => G.UI.refreshTabLocks());
+      guard('tabBadges', () => G.UI.updateTabBadges());
       guard('strategyAlerts', () => G.UI.strategyAlerts());
       guard('story', () => { if (!G.Modals.isOpen() && !G.Pack.active && S.storyQueue.length) G.Modals.checkStory(); });
     }
@@ -174,6 +180,10 @@
       }
     });
     window.addEventListener('beforeunload', () => { if (G.S) Main.save(); });
+    // a hard reset in another tab/window must not be undone by this one saving its copy
+    window.addEventListener('storage', (e) => {
+      if (e.key === G.Save.key && e.newValue === null && !wiping) { wiping = true; running = false; location.reload(); }
+    });
     document.addEventListener('visibilitychange', () => { if (document.hidden && G.S) Main.save(); });
     window.addEventListener('error', (e) => Main.reportError('page', e.error || e.message));
     window.addEventListener('unhandledrejection', (e) => Main.reportError('async', e.reason));

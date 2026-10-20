@@ -238,7 +238,7 @@
           const v = attrs[k];
           if (v === undefined || v === null || v === false) continue;
           if (k === 'on') for (const ev in v) el.addEventListener(ev, v[ev]);
-          else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+          else if (k === 'style' && typeof v === 'object') for (const sk in v) { if (sk.startsWith('--')) el.style.setProperty(sk, v[sk]); else el.style[sk] = v[sk]; }
           else if (k === 'html') el.innerHTML = v;
           else if (k === 'text') el.textContent = v;
           else if (k === 'cls') el.className += ' ' + v;

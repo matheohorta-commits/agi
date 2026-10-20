@@ -42,8 +42,15 @@
       cv.style.cursor = orb.hover ? 'pointer' : 'default';
     });
   };
-  function toLocal(e) {
+  /** on-screen rect of the drawn picture (the canvas may be cropped with object-fit: cover on short screens) */
+  function contentRect() {
     const r = cv.getBoundingClientRect();
+    const k = Math.max(r.width / W, r.height / H);
+    const w = W * k, hh = H * k;
+    return { left: r.left + (r.width - w) / 2, top: r.top + (r.height - hh) / 2, width: w, height: hh };
+  }
+  function toLocal(e) {
+    const r = contentRect();
     return { x: ((e.clientX - r.left) / r.width) * W, y: ((e.clientY - r.top) / r.height) * H };
   }
   Scene.hitOrb = (e) => {
@@ -51,7 +58,7 @@
     return Math.hypot(p.x - orb.x, p.y - orb.y) < orb.r + 10;
   };
   Scene.orbScreenPos = () => {
-    const r = cv.getBoundingClientRect();
+    const r = contentRect();
     return { x: r.left + (orb.x / W) * r.width, y: r.top + (orb.y / H) * r.height };
   };
   Scene.pulse = (crit) => {

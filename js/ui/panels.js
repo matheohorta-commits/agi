@@ -35,7 +35,23 @@
 
   const E = {};
   P.init = () => {
-    for (const id of ['modelName', 'capBig', 'capBar', 'modelSub', 'benches', 'rankBadge', 'trainBar', 'trainPct', 'trainEta', 'lossMini', 'allocBody', 'vibeKnob', 'vibeText', 'vibeNum', 'feed', 'objectives', 'buffs', 'buffPanel', 'autoAlloc']) E[id] = document.getElementById(id);
+    for (const id of ['modelName', 'capBig', 'capRing', 'capBar', 'modelSub', 'benches', 'rankBadge', 'trainMini', 'trainBar', 'trainPct', 'trainEta', 'quickTrain', 'lossMini', 'allocBody', 'vibeKnob', 'vibeText', 'vibeNum', 'feed', 'objectives', 'objCount', 'buffs', 'buffPanel', 'buffMult', 'autoAlloc']) E[id] = document.getElementById(id);
+    // one-click training from the main screen: same compute-optimal plan as START in the TRAIN tab
+    E.quickTrain.addEventListener('click', () => {
+      const S = G.S;
+      if (S.training) return;
+      const plan = G.Sim.plannedRun();
+      if (G.Sim.startTraining(plan.N, plan.D, plan.rl, true)) {
+        G.Audio.bigBuy();
+        const r = E.quickTrain.getBoundingClientRect();
+        G.FX.burst(r.left + r.width / 2, r.top + r.height / 2, { n: 22, colors: ['#5cf27a', '#ffffff', '#ffe45c'] });
+        P.updateTrain();
+      } else G.Audio.error();
+    });
+    G.UI.tip(E.quickTrain, () => {
+      const out = G.Sim.trainOutlook(G.Sim.plannedRun());
+      return `<b>TRAIN THE NEXT MODEL</b><br>Starts the best run your compute and data allow (same as START in the TRAIN tab).${out.blocker ? '' : `<br>Expected: <span style="color:var(--green)">+${out.gain.toFixed(1)} capability</span>`}<div class="tl2">Better models deploy automatically when training ends.</div>`;
+    });
     // model panel interactions
     E.modelName.addEventListener('dblclick', () => {
       const S = G.S, m = S.models[S.deployed];
@@ -130,6 +146,10 @@
     P._capShown += Math.abs(diff) < 0.05 ? diff : diff * 0.45; // settles in ~0.5s so a deploy registers right away
     U.toggleClass(E.capBig, 'rising', diff > 0.5);
     U.setHTML(E.capBig, `${P._capShown.toFixed(P._capShown < 100 ? 1 : 0)}<small>CAPABILITY</small>`);
+    const ms = G.MILESTONES;
+    const ni = ms.findIndex((x) => x.cap > D.cap);
+    const lo = ni > 0 ? ms[ni - 1].cap : 0, hi = ni >= 0 ? ms[ni].cap : lo;
+    E.capRing.style.setProperty('--p', ni < 0 ? 100 : (U.clamp((D.cap - lo) / Math.max(1, hi - lo), 0, 1) * 100).toFixed(1));
     U.setText(E.rankBadge, D.bestCap > 0 ? '#' + D.rank : '#?');
     U.toggleClass(E.rankBadge, 'first', D.rank === 1 && D.cap > 0);
     const parts = [[D.capPre, '#b04dff'], [D.capRL, '#ff9b3d'], [D.capTTC, '#ff5cc8'], [D.capTTT, '#3ee6ff'], [D.capAgents, '#ffe45c'], [D.capFlat, '#5cf27a']];
@@ -155,6 +175,7 @@
   P.updateTrain = () => {
     const S = G.S, D = G.D;
     const tr = S.training;
+    U.toggleClass(E.trainMini, 'idle', !tr);
     if (tr) {
       const p = Math.min(1, tr.done / tr.flop);
       E.trainBar.style.width = (p * 100).toFixed(1) + '%';
@@ -169,6 +190,15 @@
         : out.blocker === 'data' ? 'IDLE — out of data: buy data (DATA tab)'
         : out.blocker === 'compute' ? 'IDLE — need more compute (COMPUTE tab)' : 'IDLE — start a run in TRAIN');
       U.setText(E.trainEta, '');
+      const autoOn = S.prestige.lessons.autotrain && S.auto.train;
+      const can = !out.blocker && !autoOn;
+      E.quickTrain.disabled = !can;
+      const plan = G.Sim.plannedRun();
+      const eta = D.trainRate > 0 ? G.Sim.predict(plan.N, plan.D, plan.rl).flop / D.trainRate : Infinity;
+      U.setHTML(E.quickTrain, autoOn ? '⟳ AUTO-TRAIN IS ON<small>a run starts when a better model is possible</small>'
+        : can ? `▶ TRAIN NEXT MODEL<small>+${out.gain.toFixed(1)} capability · ${eta < 1 ? 'instant' : '~' + U.fmtTime(eta)}</small>`
+        : `NO BETTER MODEL YET<small>${out.blocker === 'data' ? 'need more data — DATA tab' : out.blocker === 'compute' ? 'need more compute — COMPUTE tab' : 'set up a run in the TRAIN tab'}</small>`);
+      return;
     }
     drawLossChart(E.lossMini, tr, false);
   };
@@ -293,8 +323,10 @@
   /* ------------------------------------------------------------------ vibes */
   P.updateVibes = () => {
     const S = G.S, D = G.D;
-    E.vibeKnob.style.left = ((S.vibe + 100) / 2).toFixed(1) + '%';
+    E.vibeKnob.style.transform = `rotate(${(U.clamp(S.vibe, -100, 100) * 0.9).toFixed(1)}deg)`;
     const v = S.vibe;
+    U.toggleClass(E.vibeText, 'hi', v >= 40);
+    U.toggleClass(E.vibeText, 'lo', v <= -40);
     const t = v < -80 ? "IT'S SO OVER 💀" : v < -40 ? "it's over" : v < -10 ? 'meh' : v < 10 ? 'neutral' : v < 40 ? 'good vibes' : v < 80 ? "we're back" : "WE'RE SO BACK 🚀";
     U.setText(E.vibeText, t);
     U.setText(E.vibeNum, `${v > 0 ? '+' : ''}${v.toFixed(0)} · demand ${U.fmtMult(D.vibeMult)}`);
@@ -313,11 +345,16 @@
     const w = G.FEED_WHO[p.who] || G.FEED_WHO.news;
     let name = w.name, handle = w.handle;
     if (p.who === 'you') { name = G.LABS[G.S.lab].name; handle = '@' + G.LABS[G.S.lab].short.toLowerCase(); }
-    const el = h('div.post' + (p.mini ? '.mini' : '') + (w.reddit ? '.reddit' : '') + (w.sys ? '.sys' : ''), { id: 'post-' + p.id },
+    const ago = h('span.ago');
+    const el = h('div.post' + (p.mini ? '.mini' : '') + (w.reddit ? '.reddit' : '') + (w.sys ? '.sys' : ''), { id: 'post-' + p.id, style: { '--nc': w.color || '#fff' } },
       h('img.av', { src: avatar(p.who) }),
       h('div',
-        h('div.who', name + ' ', h('span', handle)),
-        h('div.tx', p.text)));
+        h('div.who', h('b', name), w.card && !w.reddit ? h('span.vf', '✓') : ' ', h('span', handle, ' · ', ago)),
+        h('div.tx', p.text),
+        p.mini ? null : engagement(p)));
+    el._t = p.t || 0;
+    el._ago = ago;
+    U.setText(ago, agoText(el._t));
     if (p.mini) {
       const m = G.MINI.find((x) => x.id === p.mini);
       if (p.resolved) el.classList.add(p.resolved);
@@ -339,6 +376,19 @@
     E.feed.insertBefore(el, E.feed.firstChild);
     while (E.feed.childElementCount > 40) E.feed.lastChild.remove();
   };
+  function agoText(t) {
+    const d = Math.max(0, (G.S.stats.playTime || 0) - t);
+    return d < 45 ? 'now' : d < 3600 ? Math.round(d / 60) + 'm' : d < 86400 ? Math.round(d / 3600) + 'h' : Math.round(d / 86400) + 'd';
+  }
+  /** reply / repost / like counts: deterministic per post, bigger as your user base grows */
+  function engagement(p) {
+    const rng = U.seeded(String(p.id));
+    const reach = 40 + Math.pow(Math.max(1, G.D.users || 1), 0.42) * 6;
+    const likes = Math.round(reach * (0.3 + rng() * 2.5));
+    const fmt = (n) => (n < 1000 ? String(n) : U.fmt(n));
+    return h('div.eng', h('span', '💬 ' + fmt(Math.round(likes * (0.02 + rng() * 0.06)))), h('span', '🔁 ' + fmt(Math.round(likes * (0.08 + rng() * 0.2)))), h('span.lk', '♥ ' + fmt(likes)));
+  }
+  let agoAcc = 0;
   P.resolvePost = (postId, success) => {
     const el = document.getElementById('post-' + postId);
     if (!el) return;
@@ -348,6 +398,10 @@
   };
   P.updateFeedTimers = () => {
     const S = G.S;
+    if (++agoAcc >= 50) { // every ~5 s
+      agoAcc = 0;
+      for (const el of E.feed.children) if (el._ago) U.setText(el._ago, agoText(el._t));
+    }
     if (!S.mini) return;
     const el = document.getElementById('post-' + S.mini.post);
     if (el && el._timer) el._timer.style.width = (S.mini.left / S.mini.timer) * 100 + '%';
@@ -356,6 +410,8 @@
   /* ------------------------------------------------------------------ objectives & buffs */
   P.updateObjectives = () => {
     const obs = G.Sim.currentObjectives(3);
+    const done = G.OBJECTIVES.filter((o) => G.S.objectives[o.id]).length;
+    U.setText(E.objCount, done + ' / ' + G.OBJECTIVES.length);
     const html = obs.map((o) => `<div class="obj">${U.escape(o.text)}</div>`).join('') || '<div class="obj done">All objectives complete. The universe awaits.</div>';
     U.setHTML(E.objectives, html);
   };
@@ -364,8 +420,11 @@
     E.buffPanel.style.display = S.buffs.length ? 'block' : 'none';
     const html = S.buffs.map((b) => {
       const bad = (b.users && b.users < 1) || (b.rp && b.rp < 1) || (b.money && b.money < 1);
-      return `<div class="buff${bad ? ' bad' : ''}"><span>${U.escape(b.name)}</span><span>${Math.ceil(b.left)}s</span></div>`;
+      const frac = b.dur ? U.clamp(b.left / b.dur, 0, 1) : 1;
+      return `<div class="buff${bad ? ' bad' : ''}"><i style="width:${(frac * 100).toFixed(1)}%"></i><span>${U.escape(b.name)}</span><span>${Math.ceil(b.left)}s</span></div>`;
     }).join('');
     U.setHTML(E.buffs, html);
+    const D = G.D, cm = Math.max(D.comboMoney || 1, D.comboClick || 1);
+    U.setText(E.buffMult, cm > 1.01 ? 'combo ×' + U.fmt(cm) : '');
   };
 })(typeof window !== 'undefined' ? window : globalThis);
