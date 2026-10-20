@@ -45,6 +45,11 @@
       const rows = S.buffs.map((b) => `${b.name}: ${buffFx(b)} · ${Math.ceil(b.left)}s`);
       return `<b>ACTIVE COMBO</b><br>${rows.join('<br>') || 'No buffs active.'}<hr>Revenue ×${U.fmt(D.comboMoney)} · Clicks ×${U.fmt(D.comboClick)}<div class="tl2">Buffs multiply each other. Stack drops and abilities for huge combos.</div>`;
     },
+    insight: () => {
+      const ins = G.S.insight;
+      const left = G.STRAT.INSIGHT_SECONDS - ins.t;
+      return `<b>◆ INSIGHTS</b><br>${ins.n} available · ${ins.total} earned<br>Next in ${Math.floor(left / 60)}m ${Math.floor(left % 60)}s<hr><span class="tl2">Spend them in STRATEGY → INSIGHTS to level up buildings (permanent).</span>`;
+    },
     ticker: () => (G.UI.tickerLeak() ? '<b>🍎 LEAK!</b><br>Click the headline before it disappears.' : '<b>NEWS TICKER</b><br>Headlines change as you progress. Watch for 🍎 leaks — they are clickable.'),
   };
   function buffFx(b) {
@@ -200,7 +205,7 @@
       live.add(d.id);
       let el = dropEls.get(d.id);
       if (!el) {
-        const sprite = { crate: 'crate', strawberry: 'strawberry', apple: 'apple', gpu: 'gpu', coin: 'coin', rocket: 'rocket', brain: 'brain' }[d.type] || 'drop_default';
+        const sprite = { crate: 'crate', strawberry: 'strawberry', apple: 'apple', gpu: 'gpu', coin: 'coin', rocket: 'rocket', brain: 'brain', storm: 'lightning', boom: 'factory' }[d.type] || 'drop_default';
         el = h('div.drop.' + d.type, h('img', { src: UI.icon(sprite, 4), draggable: 'false' }));
         UI.tip(el, () => `<b>${d.name}</b><br>Click to grab!`);
         el.addEventListener('mousedown', (e) => {
@@ -244,7 +249,7 @@
   /* ------------------------------------------------------------------ top bar */
   const R = {};
   UI.initTop = () => {
-    for (const id of ['rMoney', 'rMoneyR', 'rFlops', 'rFlopsR', 'rData', 'rDataR', 'rRP', 'rRPR', 'rAP', 'rAPR', 'rStraw', 'dateTxt', 'eraTxt', 'packCount', 'eraBadge', 'clickVal', 'combo']) R[id] = document.getElementById(id);
+    for (const id of ['rMoney', 'rMoneyR', 'rFlops', 'rFlopsR', 'rData', 'rDataR', 'rRP', 'rRPR', 'rAP', 'rAPR', 'rStraw', 'dateTxt', 'eraTxt', 'packCount', 'eraBadge', 'clickVal', 'combo', 'insChip', 'rIns', 'rInsR']) R[id] = document.getElementById(id);
     U.$('#packBtn').addEventListener('click', () => {
       G.Audio.tab();
       if (G.Sim.totalPacks() > 0) G.Pack.open('legendary');
@@ -275,6 +280,12 @@
     U.setText(R.rAPR, D.alignReq > 0 ? 'safety margin' : 'alignment');
     U.toggleClass(R.rAP.closest('.res'), 'warn', D.alignReq > 0 && D.safety < 1);
     U.setText(R.rStraw, U.fmtInt(S.strawberries));
+    R.insChip.style.display = S.insight.unlocked ? '' : 'none';
+    if (S.insight.unlocked) {
+      U.setText(R.rIns, '◆ ' + S.insight.n);
+      const left = G.STRAT.INSIGHT_SECONDS - S.insight.t;
+      U.setText(R.rInsR, 'next ' + Math.floor(left / 60) + ':' + String(Math.floor(left % 60)).padStart(2, '0'));
+    }
     U.setText(R.dateTxt, U.fmtDate(D.date));
     const era = G.ERAS[D.era];
     U.setText(R.eraTxt, era.name);
@@ -347,6 +358,22 @@
     bus.on('project', (p) => { G.Audio.milestone(); UI.banner('MEGAPROJECT', p.name.toUpperCase(), G.S.ending === 'misaligned' ? p.misaligned : p.aligned); G.FX.confetti(120); });
     bus.on('packOpened', (r) => { if (r.rarity.idx >= 3) UI.markTab('cards'); });
     bus.on('buff', (b) => {});
+    // optimization layer
+    bus.on('synergy', (sy) => { G.Audio.bigBuy(); UI.toast(`⇄ Synergy online: ${sy.name}`, 'good'); });
+    bus.on('influencer', (f) => { G.Audio.milestone(); UI.toast(`📣 Hired ${f.name} — Hype now pays more`, 'good'); });
+    bus.on('levelUp', (e) => {
+      const it = G.Sim.item(e.kind, e.id);
+      UI.toast(`◆ ${it ? it.name : e.id} reached level ${e.level}`, 'good');
+      const opened = Object.entries(G.Sim.UNLOCKS).find(([, u]) => u.kind === e.kind && u.id === e.id);
+      if (opened && e.level === 1) {
+        const name = { board: 'THE BOARD OF ADVISORS', shog: 'THE SHOGGOTH', market: 'THE GPU EXCHANGE' }[opened[0]];
+        UI.banner('NEW SYSTEM UNLOCKED', name, 'Find it in the STRATEGY tab.');
+        G.Audio.milestone();
+        UI.markTab('strategy');
+      }
+    });
+    bus.on('shogLevel', (e) => { UI.banner('THE SHOGGOTH GROWS', 'LEVEL ' + e.level, e.aura ? 'New aura revealed: ' + e.aura.name : 'It seems pleased.'); G.FX.shake(U.$('#app'), 4); });
+    bus.on('leak', (e) => UI.toast('🍎 ' + e.text, 'good'));
   };
 
   /* ------------------------------------------------------------------ tabs registry (filled in tabs.js) */

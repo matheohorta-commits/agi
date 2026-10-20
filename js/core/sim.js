@@ -401,6 +401,7 @@
     S.money += v;
     S.stats.totalMoney += v;
     S.stats.clicks++;
+    if (D.comboClick > 1) S.stats.stormClicks = (S.stats.stormClicks || 0) + 1;
     S.vibe = Math.min(100, S.vibe + G.BAL.VIBE_CLICK * D.M.vibeGain * (S.vibe < 60 ? 1 : 0.4));
     addTrainProgress(D.trainRate * 0.01);
     return { v, crit };
@@ -427,10 +428,14 @@
     { type: 'strawberry', w: () => 0.2, name: '🍓 Strawberry' },
     { type: 'apple', w: () => 0.14, name: '🍎 Leak' },
     { type: 'gpu', w: () => 0.14, name: 'GPU Shipment' },
-    { type: 'coin', w: () => 0.15, name: 'Funding' },
+    { type: 'coin', w: () => 0.15, name: 'Lucky Round' },
     { type: 'rocket', w: () => 0.08, name: 'Viral Demo' },
     { type: 'brain', w: () => (S.training ? 0.07 : 0), name: 'Eureka' },
+    { type: 'storm', w: () => (D.bestCap >= 40 ? 0.06 : 0), name: 'Click Storm' },
+    { type: 'boom', w: () => (Object.values(S.hw).filter((n) => n > 0).length >= 2 ? 0.07 : 0), name: 'Supply Boom' },
   ];
+  /** buff duration multiplier from drop power (half as strong as on instant rewards) */
+  const dropDur = (base) => Math.round(base * (1 + (D.M.dropPower - 1) * 0.5));
   function spawnDrop(forceType) {
     const t = forceType ? DROP_TYPES.find((x) => x.type === forceType) : U.weighted(DROP_TYPES, (x) => x.w());
     const d = { id: 'd' + Math.random().toString(36).slice(2, 8), type: t.type, name: t.name, life: G.BAL.DROP_LIFETIME, max: G.BAL.DROP_LIFETIME, seed: Math.random() };
@@ -460,12 +465,12 @@
         const n = Math.max(1, Math.round(U.randi(1, 3) * M.strawberry));
         S.strawberries += n;
         S.stats.strawberryDrops++;
-        addBuff({ id: 'frenzy', name: 'FEEL THE AGI', dur: 30, compute: 7, money: 7 });
+        addBuff({ id: 'frenzy', name: 'FEEL THE AGI', dur: dropDur(30), compute: 7, money: 7 });
         text = `FEEL THE AGI! ×7 compute & revenue · +${n}🍓`;
         break;
       }
       case 'apple': {
-        const g = Math.max(20, D.rpRate * 120);
+        const g = Math.max(20, D.rpRate * 120) * M.dropPower;
         S.rp += g;
         text = `Leaked research notes! +${U.fmt(g)} RP`;
         break;
@@ -474,32 +479,47 @@
         let best = null;
         for (const h of G.HARDWARE) if (Sim.unlocked(h.req)) best = h;
         const own = S.hw[best.id] || 0;
-        const n = Math.max(1, Math.floor(own * 0.06));
+        const n = Math.max(1, Math.floor(own * 0.06 * M.dropPower));
         S.hw[best.id] = own + n;
         text = `GPU shipment: +${n} ${best.name}`;
         break;
       }
       case 'coin': {
-        const g = Math.max(50, D.revenue * 150);
+        // Lucky (Cookie Clicker rule): 15% of your bank, capped at 15 minutes of revenue — keep cash to profit.
+        // Revenue includes buffs, so a Lucky during FEEL THE AGI is worth ×7.
+        const cap = D.revenue * 900;
+        const g = Math.max(50, D.revenue * 60, Math.min(S.money * 0.15, cap)) * M.dropPower;
         S.money += g;
         S.stats.totalMoney += g;
-        text = `Surprise funding round! +${U.fmtMoney(g)}`;
+        text = `Lucky round! +${U.fmtMoney(g)}${S.money * 0.15 < cap * 0.5 ? ' (bank more cash for bigger luck)' : ''}`;
         break;
       }
       case 'rocket': {
         addVibe(40);
-        addBuff({ id: 'viral', name: 'Viral Demo', dur: 45, users: 2 });
+        addBuff({ id: 'viral', name: 'Viral Demo', dur: dropDur(45), users: 2 });
         text = 'Your demo went viral! Vibes +40, users ×2';
         break;
       }
       case 'brain': {
         if (S.training) {
-          addTrainProgress(S.training.flop * 0.15);
+          addTrainProgress(S.training.flop * 0.15 * M.dropPower);
           text = 'Eureka! Training +15%';
         } else {
-          S.rp += D.rpRate * 60;
+          S.rp += D.rpRate * 60 * M.dropPower;
           text = 'Eureka! +RP';
         }
+        break;
+      }
+      case 'storm': {
+        addBuff({ id: 'storm', name: 'Click Storm', dur: dropDur(13), click: 777 });
+        text = 'CLICK STORM! Clicks ×777 for 13s — click the model!';
+        break;
+      }
+      case 'boom': {
+        const most = Math.max(0, ...Object.values(S.hw));
+        const m = 1 + 0.01 * most * M.dropPower;
+        addBuff({ id: 'boom', name: 'Supply Boom', dur: dropDur(30), compute: m, money: 1 + (m - 1) * 0.5 });
+        text = `Supply boom! Compute ×${U.fmt(m)} for 30s (+1% per unit of your most-owned hardware)`;
         break;
       }
     }
@@ -1144,6 +1164,7 @@
     }
 
     // run max capability
+    if (D.comboMoney > (s.stats.maxCombo || 1)) s.stats.maxCombo = D.comboMoney;
     if (D.cap > (s.run.maxCap || 0)) s.run.maxCap = D.cap;
     if (D.cap > s.stats.bestCapEver) s.stats.bestCapEver = D.cap;
     if (D.rank === 1 && D.cap > 60) s.stats.rank1Streak += dt;
@@ -1161,6 +1182,7 @@
     // ASI
     if (!s.flags.asi && D.cap >= B.ASI_CAP) triggerASI();
     tickCosmos(dt);
+    if (Sim.tickStrategy) Sim.tickStrategy(dt);
 
     // once per second
     secAcc += dt;

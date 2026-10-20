@@ -142,6 +142,7 @@
       guard('tabs', () => G.UI.updateTabs());
       guard('objectives', () => G.Panels.updateObjectives());
       guard('tabLocks', () => G.UI.refreshTabLocks());
+      guard('strategyAlerts', () => G.UI.strategyAlerts());
       guard('story', () => { if (!G.Modals.isOpen() && !G.Pack.active && S.storyQueue.length) G.Modals.checkStory(); });
     }
     saveAcc += dt;

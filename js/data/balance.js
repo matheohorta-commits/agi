@@ -49,7 +49,7 @@
       upgrade: 1,
     },
     RC0: 20, // research cost at t=20
-    RC_DECADE: 22, // research cost x10 per this much target capability
+    RC_DECADE: 20, // research cost x10 per this much target capability
     RC_LATE: 40, // extra x10 per this much capability beyond 260
     REPEAT_SUPER: 1.15, // repeatable research cost gets an extra x1.15^(l(l-1)/2)
     TTC_K: 0.5, // capability per (reasoning skill x log2(test-time compute multiplier))

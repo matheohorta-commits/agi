@@ -18,8 +18,42 @@
       maxEffort: 0, autoRP: 1, enterprise: false,
       hw: {}, res: {}, safety: {}, src: {}, pow: {},
       cost_cai: 1, cost_chat: 1, cosReplicate: 1, cosEff: 1, cosEnergy: 1,
-      capPreMult: 1, misalignRate: 1, noClick: false, noProducts: false,
+      capPreMult: 1, misalignRate: 1, noClick: false, noProducts: false, dropPower: 1,
     };
+  }
+
+  /** the optimization layer (data/strategy.js): synergies, building levels, hype & influencers, the Board, Shoggoth auras */
+  function applyStrategy(s, M, D) {
+    const ST = G.STRAT;
+    if (!ST) return;
+    const table = { hw: M.hw, res: M.res, safety: M.safety, src: M.src, power: M.pow };
+    const owned = (k, id) => (s[k] && s[k][id]) || 0;
+    for (const sy of G.SYNERGIES) {
+      if (!s.syn[sy.id]) continue;
+      const [ak, aid] = sy.a, [bk, bid] = sy.b;
+      table[ak][aid] = (table[ak][aid] || 1) * (1 + sy.ka * ST.SYN_K * owned(bk, bid));
+      table[bk][bid] = (table[bk][bid] || 1) * (1 + sy.kb * ST.SYN_K * owned(ak, aid));
+    }
+    for (const key in s.levels) {
+      const lv = s.levels[key];
+      const i = key.indexOf(':');
+      const t = table[key.slice(0, i)];
+      if (t && lv > 0) t[key.slice(i + 1)] = (t[key.slice(i + 1)] || 1) * (1 + ST.LEVEL_BONUS * lv);
+    }
+    D.hype = Object.keys(s.achievements).length * ST.HYPE_PER_ACH;
+    let infl = 1;
+    for (const f of G.INFLUENCERS) if (s.infl[f.id]) infl *= 1 + D.hype * f.k;
+    D.inflMult = infl;
+    M.money *= infl;
+    M.rp *= 1 + (infl - 1) * ST.INFL_RP;
+    for (const seat of G.SEATS) {
+      const a = s.board[seat.id] && G.ADVISORS.find((x) => x.id === s.board[seat.id]);
+      if (a) a.fx(M, seat.k);
+    }
+    for (const id of s.shog.auras) {
+      const au = G.AURAS.find((x) => x.id === id);
+      if (au) au.fx(M, s);
+    }
   }
 
   function cardLevel(n) {
@@ -159,6 +193,7 @@
     const am = 1 + 0.01 * achN;
     M.compute *= am; M.money *= am; M.rp *= am;
     D.achMult = am;
+    applyStrategy(s, M, D);
     // story flags
     if (s.flags.race) M.rdMult *= 2;
     if (s.flags.slowdown) M.ap *= 3;

@@ -10,7 +10,7 @@ const ROOT = path.join(__dirname, '..');
 const FILES = [
   'js/util.js', 'js/data/balance.js', 'js/data/labs.js', 'js/data/buildings.js', 'js/data/research.js', 'js/data/products.js',
   'js/data/cards.js', 'js/data/story.js', 'js/data/feed.js', 'js/data/achievements.js', 'js/data/cosmos.js', 'js/data/objectives.js',
-  'js/core/state.js', 'js/core/calc.js', 'js/core/sim.js',
+  'js/data/strategy.js', 'js/core/state.js', 'js/core/calc.js', 'js/core/sim.js', 'js/core/strategy.js',
 ];
 // deterministic Math.random for reproducible runs (SEED env)
 let seed = parseInt(process.env.SEED || '12345', 10) >>> 0;
@@ -24,6 +24,7 @@ function deepMerge(a, b) { for (const k in b) { if (b[k] && typeof b[k] === 'obj
 for (const f of FILES) {
   vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), ctx, { filename: f });
   if (f === 'js/data/balance.js' && process.env.BAL) deepMerge(ctx.G.BAL, JSON.parse(process.env.BAL));
+  if (f === 'js/data/strategy.js' && process.env.STRAT) deepMerge(ctx.G.STRAT, JSON.parse(process.env.STRAT));
 }
 const G = ctx.G;
 const U = G.U;
@@ -142,6 +143,39 @@ function botDecide() {
     const p = Sim.predict(nd.N, nd.D, rl);
     const cur = D.model ? D.model.capPre + (D.model.rlBonus || 0) : -Infinity;
     if (p.capPre + p.rlBonus > cur + 0.8) Sim.startTraining(nd.N, nd.D, rl);
+  }
+  // optimization layer (unless NOSTRAT=1): a reasonable player's use of synergies, influencers, levels, board, shoggoth, market
+  if (!process.env.NOSTRAT) {
+    for (const sy of G.SYNERGIES) if (Sim.synAvailable(sy) && Sim.synCost(sy) < S.money * 0.3) Sim.buySyn(sy.id);
+    for (const f of G.INFLUENCERS) if (Sim.inflAvailable(f) && f.cost < S.money * 0.3) Sim.buyInfl(f.id);
+    if (S.insight.n > 0) {
+      const want = [['res', 'rs'], ['safety', 'interp'], ['hw', 'dgxa100']];
+      let done = false;
+      for (const [k, id] of want) if (!done && Sim.owned(k, id) > 0 && Sim.buildingLevel(k, id) < 1) done = Sim.levelUp(k, id);
+      if (!done) {
+        // level the hardware with the biggest share of compute
+        let best = null, bv = 0;
+        for (const hw of G.HARDWARE) { const v = D.hwFlops[hw.id] || 0; if (v > bv) { bv = v; best = hw; } }
+        if (best) Sim.levelUp('hw', best.id);
+      }
+    }
+    if (Sim.featureOpen('board')) {
+      const plan = [['jensen', 'chair'], ['demis', 'board'], ['satya', 'advisor']];
+      for (const [a, seat] of plan) if (S.board[seat] !== a) Sim.seatAdvisor(a, seat);
+    }
+    if (Sim.featureOpen('shog')) {
+      const c = Sim.shogFeedCost();
+      if (c.money < S.money * 0.2 && (!c.sacrifice || (S.hw[c.sacrifice.id] || 0) > c.sacrifice.n * 3)) Sim.feedShog();
+      const pref = ['tentacles', 'persuade', 'depth', 'swarm'];
+      for (const id of pref) if (Sim.auraUnlocked(id)) { if (!S.shog.auras.includes(id) && S.shog.auras[0] !== 'tentacles') Sim.setAura(0, id); break; }
+    }
+    if (Sim.featureOpen('market') && S.market.stocks.length) {
+      S.market.stocks.forEach((st, i) => {
+        const rest = 10 + 9 * i;
+        if (st.own > 0 && st.v > rest * 1.25) Sim.sellStock(i, 'all');
+        else if (st.v < rest * 0.6 && Sim.stockPrice(i) * 50 < S.money * 0.1) Sim.buyStock(i, 50);
+      });
+    }
   }
   // packs
   for (const k of ['legendary', 'epic', 'premium', 'basic']) while (S.packs[k] > 0) Sim.openPack(k);

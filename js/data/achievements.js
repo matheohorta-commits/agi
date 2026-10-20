@@ -87,6 +87,24 @@
   add('challenge1', 'Challenger', 'Complete a challenge', (s) => Object.keys(s.challengesDone || {}).length >= 1);
   add('challenge_all', 'Every Timeline', 'Complete every challenge', (s) => G.CHALLENGES && Object.keys(s.challengesDone || {}).length >= G.CHALLENGES.length);
 
+  // optimization layer
+  add('syn1', 'Synergy!', 'Buy a synergy upgrade', (s) => Object.keys(s.syn || {}).length >= 1);
+  add('syn10', 'Vertical Integration', 'Own 10 synergies in one run', (s) => Object.keys(s.syn || {}).length >= 10);
+  add('infl1', 'Hype Machine', 'Hire an influencer', (s) => Object.keys(s.infl || {}).length >= 1);
+  add('infl_all', 'Reality Distortion', 'Hire every influencer in one run', (s) => G.INFLUENCERS && Object.keys(s.infl || {}).length >= G.INFLUENCERS.length);
+  add('insight1', 'It Just Clicked', 'Earn your first ◆ Insight', (s) => s.insight && s.insight.total >= 1);
+  add('levels10', 'Leveling Up', 'Reach 10 total building levels', (s) => Object.values(s.levels || {}).reduce((a, b) => a + b, 0) >= 10);
+  add('levels40', 'Institutional Knowledge', 'Reach 40 total building levels', (s) => Object.values(s.levels || {}).reduce((a, b) => a + b, 0) >= 40);
+  add('board3', 'Full Board', 'Fill all three seats of the Board of Advisors', (s) => s.board && s.board.chair && s.board.board && s.board.advisor);
+  add('shog1', 'Pet Shoggoth', 'Feed the Shoggoth', (s) => s.shog && s.shog.level >= 1);
+  add('shog_max', 'Shoggoth Whisperer', 'Raise the Shoggoth to its final form', (s) => G.SHOGGOTH && s.shog && s.shog.level >= G.SHOGGOTH.MAX_LEVEL, { hidden: true });
+  add('stock1', 'Day Trader', 'Make 10 minutes of revenue in profit on the GPU Exchange', (s) => (s.stats.marketProfitSec || 0) >= 600);
+  add('stock2', 'Wolf of Sand Hill Road', 'Make a full day of revenue in profit on the GPU Exchange', (s) => (s.stats.marketProfitSec || 0) >= 86400);
+  add('combo49', 'Combo Breaker', 'Reach a ×49 revenue combo', (s) => (s.stats.maxCombo || 0) >= 49);
+  add('combo343', 'Feel the Combo', 'Reach a ×343 revenue combo', (s) => (s.stats.maxCombo || 0) >= 343, { hidden: true });
+  add('storm50', 'Storm Chaser', 'Click 50 times during Click Storms', (s) => (s.stats.stormClicks || 0) >= 50);
+  add('leak10', 'Insider', 'Catch 10 leaks in the news ticker', (s) => (s.stats.leaks || 0) >= 10);
+
   // labs
   add('lab_all', 'Every Lab', 'Unlock every lab', (s) => G.LAB_ORDER.every((id) => s.labsUnlocked[id]));
   add('secret_strawberry', 'Three R\'s', 'Click the strawberry drop 3 times in one session', (s) => s.stats.strawberryDrops >= 3, { hidden: true });
